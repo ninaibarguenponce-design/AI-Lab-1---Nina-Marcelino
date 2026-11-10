@@ -14,7 +14,9 @@ import {
   HelpCircle,
   ExternalLink,
   ChevronRight,
-  Home
+  Home,
+  ArrowLeft,
+  RotateCcw
 } from 'lucide-react';
 import { NeighborhoodData, PropertyConfig, FinancialInputs } from '../types';
 
@@ -25,6 +27,8 @@ interface LongTermRentalWorkflowProps {
   onUpdateInputs: (updated: Partial<FinancialInputs>) => void;
   onUpdateConfig: (updated: Partial<PropertyConfig>) => void;
   onBackToEvaluator: () => void;
+  onBackToReport?: () => void;
+  onStartAgain?: () => void;
 }
 
 export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
@@ -34,6 +38,8 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
   onUpdateInputs,
   onUpdateConfig,
   onBackToEvaluator,
+  onBackToReport,
+  onStartAgain,
 }) => {
   const [usePropertyManager, setUsePropertyManager] = useState<boolean>(
     inputs.longTermPropertyManagementPercent > 0
@@ -74,16 +80,29 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-            <Building2 className="w-3.5 h-3.5" />
-            <span>D.C. Long-Term Rental Workflow</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {onBackToReport && (
+              <button
+                type="button"
+                onClick={onBackToReport}
+                className="px-3.5 py-1.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-xs font-bold transition-all border border-emerald-500/30 flex items-center gap-1.5"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>← Back to Step 4: Decision Report</span>
+              </button>
+            )}
+            <button
+              onClick={onBackToEvaluator}
+              className="px-3.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5"
+            >
+              <span>← Back to Evaluator</span>
+            </button>
           </div>
-          <button
-            onClick={onBackToEvaluator}
-            className="text-xs text-slate-400 hover:text-white underline self-start sm:self-auto flex items-center gap-1"
-          >
-            <span>Switch back to Airbnb Evaluator</span>
-          </button>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider self-start sm:self-auto">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>Step 5: D.C. Long-Term Leasing</span>
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -485,15 +504,36 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-800">
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-800 flex-wrap">
           <button
             type="button"
             onClick={() => window.print()}
-            className="w-full sm:w-auto px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-full border border-slate-700 transition-colors flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-full border border-slate-700 transition-colors flex items-center justify-center gap-2"
           >
             <Printer className="w-4 h-4 text-slate-400" />
-            <span>Print Landlord Checklist</span>
+            <span>Print Checklist</span>
           </button>
+
+          {onBackToReport && (
+            <button
+              type="button"
+              onClick={onBackToReport}
+              className="w-full sm:w-auto px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-full border border-slate-700 transition-colors"
+            >
+              ← Back to Report
+            </button>
+          )}
+
+          {onStartAgain && (
+            <button
+              type="button"
+              onClick={onStartAgain}
+              className="w-full sm:w-auto px-6 py-3.5 bg-slate-850 hover:bg-red-950/40 text-slate-200 hover:text-red-300 border border-slate-700 hover:border-red-500/50 font-bold text-xs rounded-full transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+              <RotateCcw className="w-4 h-4 text-slate-400" />
+              <span>Start Again (Clear Options & Step 1)</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -501,7 +541,7 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
             className="w-full sm:flex-1 py-4 bg-[#00C805] hover:bg-[#00b004] text-black font-extrabold text-sm rounded-full transition-all shadow-lg flex items-center justify-center gap-2"
           >
             <Home className="w-4 h-4" />
-            <span>Return to Short-Term Rental Evaluator</span>
+            <span>Return to Evaluator</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

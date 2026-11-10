@@ -19,7 +19,8 @@ import {
   Calendar,
   FileText,
   UserCheck,
-  ArrowLeft
+  ArrowLeft,
+  RotateCcw
 } from 'lucide-react';
 import { ComplianceEvaluation, FinancialInputs, NeighborhoodData, PropertyConfig } from '../types';
 
@@ -31,6 +32,8 @@ interface AirbnbLaunchStudioProps {
   onNavigateToComps?: () => void;
   onSwitchToLongTerm?: () => void;
   onBackToEvaluator?: () => void;
+  onBackToReport?: () => void;
+  onStartAgain?: () => void;
 }
 
 export const AirbnbLaunchStudio: React.FC<AirbnbLaunchStudioProps> = ({
@@ -41,6 +44,8 @@ export const AirbnbLaunchStudio: React.FC<AirbnbLaunchStudioProps> = ({
   onNavigateToComps,
   onSwitchToLongTerm,
   onBackToEvaluator,
+  onBackToReport,
+  onStartAgain,
 }) => {
   const [activeTab, setActiveTab] = useState<'onboarding' | 'api_integrations'>('onboarding');
   const [copiedTitle, setCopiedTitle] = useState(false);
@@ -119,16 +124,27 @@ Fully registered with the D.C. Department of Licensing and Consumer Protection u
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
       {/* Top Banner */}
       <div className="bg-[#121824] p-6 sm:p-8 rounded-3xl border border-slate-700 shadow-2xl relative overflow-hidden">
-        {onBackToEvaluator && (
-          <div className="mb-4">
-            <button
-              type="button"
-              onClick={onBackToEvaluator}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 shadow-xs"
-            >
-              <ArrowLeft className="w-4 h-4 text-[#00C805]" />
-              <span>← Back to Verdict / Evaluator</span>
-            </button>
+        {(onBackToReport || onBackToEvaluator) && (
+          <div className="mb-4 flex items-center gap-2 flex-wrap">
+            {onBackToReport && (
+              <button
+                type="button"
+                onClick={onBackToReport}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00C805]/15 hover:bg-[#00C805]/25 text-[#00C805] text-xs font-bold transition-all border border-[#00C805]/30 shadow-xs"
+              >
+                <ArrowLeft className="w-4 h-4 text-[#00C805]" />
+                <span>← Back to Step 4: Decision Report</span>
+              </button>
+            )}
+            {onBackToEvaluator && (
+              <button
+                type="button"
+                onClick={onBackToEvaluator}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 shadow-xs"
+              >
+                <span>← Back to Step 3: Verdict</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -488,6 +504,44 @@ Fully registered with the D.C. Department of Licensing and Consumer Protection u
           </div>
         </div>
       )}
+
+      {/* End of Flow: Start Again Banner */}
+      <div className="p-6 sm:p-8 bg-gradient-to-r from-[#121824] via-[#161F2E] to-[#121824] rounded-3xl border border-slate-700/80 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+        <div className="space-y-1 text-center sm:text-left">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00C805]/10 text-[#00C805] text-xs font-bold uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Flow Completed · Step 5 of 5</span>
+          </div>
+          <h3 className="text-lg font-black text-white mt-1">
+            Evaluate Another D.C. Property?
+          </h3>
+          <p className="text-xs text-slate-300 max-w-xl">
+            Clear all entered options and return to Step 1 to test another neighborhood, basement in-law suite, or condo.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-center flex-wrap">
+          {onBackToReport && (
+            <button
+              type="button"
+              onClick={onBackToReport}
+              className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-full border border-slate-700 transition-colors"
+            >
+              ← Back to Report
+            </button>
+          )}
+          {onStartAgain && (
+            <button
+              type="button"
+              onClick={onStartAgain}
+              className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-[#00C805] hover:from-emerald-400 hover:to-[#00b004] text-black font-black text-xs sm:text-sm rounded-full transition-all shadow-xl hover:shadow-[#00C805]/20 flex items-center justify-center gap-2 transform active:scale-98"
+            >
+              <RotateCcw className="w-4 h-4 stroke-3" />
+              <span>Start Again (Clear All & Step 1)</span>
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

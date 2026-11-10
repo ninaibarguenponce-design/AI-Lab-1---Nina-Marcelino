@@ -326,6 +326,14 @@ export function generateDeterministicReport(
     section3 += `- ${tip}\n`;
   }
 
+  if (neighborhood.insideAirbnbMetrics) {
+    section3 += `\n**Inside Airbnb District Benchmarks (${neighborhood.ward}):**\n`;
+    section3 += `- **Ward Listing Volume:** ${neighborhood.insideAirbnbMetrics.wardListingsCount.toLocaleString()} listings (${neighborhood.insideAirbnbMetrics.entireHomePercent}% entire homes, ${neighborhood.insideAirbnbMetrics.privateRoomPercent}% private rooms)\n`;
+    section3 += `- **D.C. Licensed Compliance:** ${neighborhood.insideAirbnbMetrics.licensedPercent}% of listings display verified DLCP registration numbers\n`;
+    section3 += `- **Resident Host Ratio:** ${neighborhood.insideAirbnbMetrics.singleListingHostsPercent}% are single-listing primary residents\n`;
+    section3 += `- **Median Benchmark Rate:** $${neighborhood.insideAirbnbMetrics.medianPrice}/night (Citywide Average: $${neighborhood.insideAirbnbMetrics.averagePrice}/night; Source: [Inside Airbnb Washington, D.C.](${neighborhood.insideAirbnbMetrics.sourceUrl}))\n`;
+  }
+
   // Section 4: Strategic Recommendation & Action Plan
   let section4 = `\n### 4. 💡 Strategic Recommendation & Action Plan\n\n`;
   

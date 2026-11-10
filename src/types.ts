@@ -95,6 +95,19 @@ export interface ComplianceEvaluation {
   citations: string[];
 }
 
+export interface InsideAirbnbMetrics {
+  sourceUrl: string;
+  wardListingsCount: number;
+  entireHomePercent: number; // e.g. 77%
+  privateRoomPercent: number; // e.g. 18%
+  licensedPercent: number; // e.g. 68.4%
+  singleListingHostsPercent: number; // e.g. 63.4%
+  medianPrice: number;
+  averagePrice: number;
+  averageNightsBookedPerYear: number;
+  estimatedAnnualRevenue: number;
+}
+
 export interface NeighborhoodData {
   id: string;
   name: string;
@@ -107,6 +120,7 @@ export interface NeighborhoodData {
   demandDrivers: string[];
   seasonalSurges: { season: string; factor: string; note: string }[];
   eventPricingTips: string[];
+  insideAirbnbMetrics?: InsideAirbnbMetrics;
 }
 
 export interface ComparableListing {
@@ -129,5 +143,10 @@ export interface ComparableListing {
   distanceMiles: number;
   highlight: string;
   estimatedOccupancy: number;
+  dlcpLicenseNumber?: string;
+  minimumNights?: number;
+  reviewsPerMonth?: number;
+  isInsideAirbnbVerified?: boolean;
 }
+
 

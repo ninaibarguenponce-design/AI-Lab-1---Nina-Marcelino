@@ -116,6 +116,48 @@ export default function App() {
     setIntakeStep(4);
   };
 
+  // Start Again: Clears all entered options and brings user directly back to Step 1
+  const handleStartAgain = () => {
+    setConfig({
+      nickname: '',
+      neighborhoodId: 'capitol_hill',
+      propertyType: 'single_family',
+      isPrimaryResidence: true,
+      hostingType: 'unhosted',
+      bedrooms: 1,
+      bathrooms: 1,
+      squareFeet: undefined,
+      amenities: [],
+      hasHardshipExemption: false,
+      hasCleanHandsCertificate: true,
+      hasSmokeAndCoDetectors: true,
+      hasFireExtinguisher: true,
+      hasCertificateOfOccupancy: true,
+      hoaBylawsPermitSTR: true,
+      hasStrLiabilityInsurance: true,
+    });
+    setInputs({
+      averageDailyRate: 245,
+      occupancyRate: 70,
+      averageStayLength: 3.2,
+      turnoverCleaningCost: 150,
+      cleaningFeeChargedToGuest: 130,
+      platformFeePercent: 3.0,
+      dcTransientTaxPercent: 14.95,
+      monthlyUtilities: 240,
+      monthlySuppliesAndWear: 120,
+      monthlyInsuranceAndLicense: 85,
+      longTermMonthlyRent: 2650,
+      longTermPropertyManagementPercent: 0,
+      longTermVacancyPercent: 5,
+      longTermMaintenanceReserve: 100,
+    });
+    setIntakeStep(1);
+    setIntakeCompleted(false);
+    setActiveTab('evaluator');
+    setShowAdvancedTweaks(false);
+  };
+
   // Global header back action
   const handleHeaderBack = () => {
     if (activeTab === 'comps') {
@@ -189,7 +231,7 @@ export default function App() {
                   neighborhood={currentNeighborhood}
                   onOpenReport={() => setActiveTab('report')}
                   onOpenTweakModal={() => setShowAdvancedTweaks(!showAdvancedTweaks)}
-                  onRestart={() => setIntakeCompleted(false)}
+                  onRestart={handleStartAgain}
                   onOpenLongTermWorkflow={() => setActiveTab('long_term_workflow')}
                   onNavigateToComps={() => setActiveTab('comps')}
                   onNavigateToLaunch={() => setActiveTab('launch')}
@@ -301,6 +343,13 @@ export default function App() {
             compliance={compliance}
             neighborhood={currentNeighborhood}
             onBackToVerdict={() => setActiveTab('evaluator')}
+            onContinueToStep5={() => {
+              if (compliance.status === 'RED') {
+                setActiveTab('long_term_workflow');
+              } else {
+                setActiveTab('launch');
+              }
+            }}
           />
         )}
 
@@ -326,6 +375,8 @@ export default function App() {
             onNavigateToComps={() => setActiveTab('comps')}
             onSwitchToLongTerm={() => setActiveTab('long_term_workflow')}
             onBackToEvaluator={() => setActiveTab('evaluator')}
+            onBackToReport={() => setActiveTab('report')}
+            onStartAgain={handleStartAgain}
           />
         )}
 
@@ -338,6 +389,8 @@ export default function App() {
             onUpdateInputs={handleUpdateInputs}
             onUpdateConfig={handleUpdateConfig}
             onBackToEvaluator={() => setActiveTab('evaluator')}
+            onBackToReport={() => setActiveTab('report')}
+            onStartAgain={handleStartAgain}
           />
         )}
 

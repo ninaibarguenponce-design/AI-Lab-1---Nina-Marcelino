@@ -380,7 +380,7 @@ export const RobinhoodVerdict: React.FC<RobinhoodVerdictProps> = ({
           className="w-full sm:flex-1 py-4 bg-[#00C805] hover:bg-[#00b004] text-black font-extrabold text-sm rounded-full transition-all shadow-xl flex items-center justify-center gap-2"
         >
           <FileText className="w-4 h-4" />
-          <span>View Full D.C. Legal & Financial Report</span>
+          <span>Continue to Step 4: Statutory Report</span>
           <ArrowRight className="w-4 h-4" />
         </button>
 

@@ -16,7 +16,7 @@ import {
   Info
 } from 'lucide-react';
 import { ComparableListing, FinancialInputs, NeighborhoodData, PropertyConfig } from '../types';
-import { DC_COMPARABLE_LISTINGS, getCompsForProperty } from '../data/comparableListings';
+import { DC_COMPARABLE_LISTINGS, getCompsForProperty, INSIDE_AIRBNB_DC_SUMMARY } from '../data/comparableListings';
 
 export type DrawerContentType =
   | 'comps'
@@ -204,6 +204,13 @@ export const VerticalInfoDrawer: React.FC<VerticalInfoDrawerProps> = ({
                           <span>{listing.bathrooms} Bath</span>
                         </div>
 
+                        {listing.dlcpLicenseNumber && (
+                          <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-mono">
+                            <ShieldCheck className="w-2.5 h-2.5" />
+                            <span>{listing.dlcpLicenseNumber}</span>
+                          </div>
+                        )}
+
                         <div className="text-[10px] text-slate-400 truncate">
                           {listing.highlight}
                         </div>
@@ -234,8 +241,8 @@ export const VerticalInfoDrawer: React.FC<VerticalInfoDrawerProps> = ({
                 })}
               </div>
 
-              {onNavigateToFullComps && (
-                <div className="pt-2 text-center">
+              <div className="pt-2 flex flex-col items-center gap-1.5 text-center">
+                {onNavigateToFullComps && (
                   <button
                     type="button"
                     onClick={() => {
@@ -247,8 +254,17 @@ export const VerticalInfoDrawer: React.FC<VerticalInfoDrawerProps> = ({
                     <span>Open full screen Comps Explorer & Filters</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
-                </div>
-              )}
+                )}
+                <a
+                  href={INSIDE_AIRBNB_DC_SUMMARY.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-slate-400 hover:text-slate-300 inline-flex items-center gap-1"
+                >
+                  <span>Data verified via Inside Airbnb Washington, D.C.</span>
+                  <ExternalLink className="w-3 h-3 text-blue-400" />
+                </a>
+              </div>
             </div>
           )}
 

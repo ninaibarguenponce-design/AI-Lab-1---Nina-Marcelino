@@ -24,7 +24,19 @@ export const DC_NEIGHBORHOODS: NeighborhoodData[] = [
       'State of the Union & Committee hearing weeks: Push nightly ADR to $350+ for 2-3 night minimums.',
       'Congressional summer recess (August): Shift strategy to 7+ night family discounts or intern sub-leases.',
       'Cherry Blossom Festival peak bloom: Enforce a 3-night minimum with non-refundable 20% advance booking premiums.'
-    ]
+    ],
+    insideAirbnbMetrics: {
+      sourceUrl: 'https://insideairbnb.com/washington-dc/',
+      wardListingsCount: 1480,
+      entireHomePercent: 78,
+      privateRoomPercent: 19,
+      licensedPercent: 71.2,
+      singleListingHostsPercent: 64.1,
+      medianPrice: 235,
+      averagePrice: 315,
+      averageNightsBookedPerYear: 98,
+      estimatedAnnualRevenue: 24800,
+    }
   },
   {
     id: 'dupont_circle',
@@ -49,7 +61,19 @@ export const DC_NEIGHBORHOODS: NeighborhoodData[] = [
       'Capital Pride weekend (June): Set rates 50% above baseline with a strict 3-night minimum stay.',
       'Embassy Passport DC month (May): Highlight walking proximity to Connecticut Ave & Massachusetts Ave embassies.',
       'Midweek international NGO rotations: Package flexible check-in times to secure high-per-diem corporate travelers.'
-    ]
+    ],
+    insideAirbnbMetrics: {
+      sourceUrl: 'https://insideairbnb.com/washington-dc/',
+      wardListingsCount: 1620,
+      entireHomePercent: 79,
+      privateRoomPercent: 17,
+      licensedPercent: 69.8,
+      singleListingHostsPercent: 62.3,
+      medianPrice: 245,
+      averagePrice: 330,
+      averageNightsBookedPerYear: 102,
+      estimatedAnnualRevenue: 26400,
+    }
   },
   {
     id: 'logan_circle_shaw',
@@ -74,7 +98,19 @@ export const DC_NEIGHBORHOODS: NeighborhoodData[] = [
       'Sync pricing with the Walter E. Washington Convention Center calendar; conference weeks can command $400+/night.',
       'Promote dedicated high-speed workspaces and espresso setups to capture corporate business expense cards.',
       'Weekend dining surges: Keep 2-night minimums (Fri-Sun) to prevent single-night gaps on premium weekends.'
-    ]
+    ],
+    insideAirbnbMetrics: {
+      sourceUrl: 'https://insideairbnb.com/washington-dc/',
+      wardListingsCount: 1290,
+      entireHomePercent: 81,
+      privateRoomPercent: 16,
+      licensedPercent: 68.5,
+      singleListingHostsPercent: 61.2,
+      medianPrice: 250,
+      averagePrice: 340,
+      averageNightsBookedPerYear: 105,
+      estimatedAnnualRevenue: 27800,
+    }
   },
   {
     id: 'navy_yard_wharf',
@@ -99,7 +135,19 @@ export const DC_NEIGHBORHOODS: NeighborhoodData[] = [
       'Nationals vs. NY Mets, Phillies, or Dodgers marquee home stands: Surge nightly rates by $100+.',
       'Fourth of July weekend: Set 3-night minimum with premium pricing targeting waterfront views.',
       'Winter strategy: Offer 14-day to 30-day corporate housing stays to Navy Yard contractors to offset cold months.'
-    ]
+    ],
+    insideAirbnbMetrics: {
+      sourceUrl: 'https://insideairbnb.com/washington-dc/',
+      wardListingsCount: 890,
+      entireHomePercent: 84,
+      privateRoomPercent: 14,
+      licensedPercent: 74.5,
+      singleListingHostsPercent: 59.4,
+      medianPrice: 235,
+      averagePrice: 310,
+      averageNightsBookedPerYear: 94,
+      estimatedAnnualRevenue: 23900,
+    }
   },
   {
     id: 'georgetown',
@@ -124,7 +172,19 @@ export const DC_NEIGHBORHOODS: NeighborhoodData[] = [
       'Georgetown Commencement weekend: Book out 6–9 months in advance at $600–$800/night with a 4-night minimum.',
       'Furnish with authentic classic design and historic architectural highlights to justify premium $300+ ADR.',
       'Highlight off-street parking if available; parking in Georgetown commands an extra $40–$60/day perceived value.'
-    ]
+    ],
+    insideAirbnbMetrics: {
+      sourceUrl: 'https://insideairbnb.com/washington-dc/',
+      wardListingsCount: 480,
+      entireHomePercent: 75,
+      privateRoomPercent: 22,
+      licensedPercent: 66.2,
+      singleListingHostsPercent: 67.1,
+      medianPrice: 295,
+      averagePrice: 415,
+      averageNightsBookedPerYear: 88,
+      estimatedAnnualRevenue: 29200,
+    }
   },
   {
     id: 'foggy_bottom_west_end',
@@ -149,7 +209,19 @@ export const DC_NEIGHBORHOODS: NeighborhoodData[] = [
       'IMF/World Bank Spring and Annual meeting weeks: Quadruple standard rates or set fixed 5-night executive packages.',
       'Provide international power adapters, multiple workspace stations, and formal iron/garment steamer.',
       'Target long-term per-diem rates for incoming State Department transition staff.'
-    ]
+    ],
+    insideAirbnbMetrics: {
+      sourceUrl: 'https://insideairbnb.com/washington-dc/',
+      wardListingsCount: 520,
+      entireHomePercent: 77,
+      privateRoomPercent: 19,
+      licensedPercent: 67.8,
+      singleListingHostsPercent: 65.3,
+      medianPrice: 240,
+      averagePrice: 325,
+      averageNightsBookedPerYear: 96,
+      estimatedAnnualRevenue: 25100,
+    }
   },
   {
     id: 'howard_columbia_heights',
@@ -174,7 +246,19 @@ export const DC_NEIGHBORHOODS: NeighborhoodData[] = [
       'Howard Homecoming week: Set minimum stay of 3 nights and raise ADR by 60–75%.',
       'Market English basement apartments directly to visiting medical residents with monthly discount tiers.',
       'Emphasize proximity to the Green/Yellow Line Metro stations (Columbia Heights, Georgia Ave-Petworth).'
-    ]
+    ],
+    insideAirbnbMetrics: {
+      sourceUrl: 'https://insideairbnb.com/washington-dc/',
+      wardListingsCount: 940,
+      entireHomePercent: 69,
+      privateRoomPercent: 28,
+      licensedPercent: 63.4,
+      singleListingHostsPercent: 69.2,
+      medianPrice: 185,
+      averagePrice: 245,
+      averageNightsBookedPerYear: 92,
+      estimatedAnnualRevenue: 19400,
+    }
   },
   {
     id: 'noma_h_street',
@@ -199,7 +283,19 @@ export const DC_NEIGHBORHOODS: NeighborhoodData[] = [
       'H Street Festival weekend: Increase rates by 40% with a non-negotiable 2-night minimum.',
       'Union Station proximity: Attract quick 1-night rail commuters by offering self-check-in smart locks and luggage storage.',
       'Highlight proximity to Union Market culinary district for high-spending food and lifestyle travelers.'
-    ]
+    ],
+    insideAirbnbMetrics: {
+      sourceUrl: 'https://insideairbnb.com/washington-dc/',
+      wardListingsCount: 860,
+      entireHomePercent: 74,
+      privateRoomPercent: 23,
+      licensedPercent: 67.1,
+      singleListingHostsPercent: 66.0,
+      medianPrice: 205,
+      averagePrice: 275,
+      averageNightsBookedPerYear: 90,
+      estimatedAnnualRevenue: 20800,
+    }
   }
 ];
 

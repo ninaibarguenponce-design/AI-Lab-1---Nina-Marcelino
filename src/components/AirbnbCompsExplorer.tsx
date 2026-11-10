@@ -23,7 +23,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { ComparableListing, FinancialInputs, NeighborhoodData, PropertyConfig } from '../types';
-import { DC_COMPARABLE_LISTINGS, getCompsForProperty } from '../data/comparableListings';
+import { DC_COMPARABLE_LISTINGS, getCompsForProperty, INSIDE_AIRBNB_DC_SUMMARY } from '../data/comparableListings';
 
 interface AirbnbCompsExplorerProps {
   config: PropertyConfig;
@@ -157,6 +157,74 @@ export const AirbnbCompsExplorer: React.FC<AirbnbCompsExplorerProps> = ({
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Inside Airbnb Washington D.C. Verified Data Callout */}
+      <div className="bg-gradient-to-r from-blue-950/40 via-[#121824] to-emerald-950/30 border border-blue-500/30 rounded-2xl p-4 sm:p-5 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-black text-xs">
+              IA
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white">
+                  Inside Airbnb: Washington, D.C. Open Data Reference
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 text-[10px] font-bold border border-blue-500/30">
+                  Verified D.C. Dataset
+                </span>
+              </div>
+              <p className="text-xs text-slate-300">
+                Independent open data tracking 6,942+ active listings, verified DLCP STR license numbers, and resident hosting trends.
+              </p>
+            </div>
+          </div>
+
+          <a
+            href={INSIDE_AIRBNB_DC_SUMMARY.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-blue-500/40 rounded-full text-xs font-bold transition-colors whitespace-nowrap self-start sm:self-auto"
+          >
+            <span>Explore Inside Airbnb DC Database</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 text-xs">
+          <div>
+            <span className="text-slate-400 text-[11px] block">D.C. Licensed Rate</span>
+            <span className="font-mono font-bold text-emerald-400 text-sm">
+              {INSIDE_AIRBNB_DC_SUMMARY.licensedPercent}%
+            </span>
+            <span className="text-[10px] text-slate-400 block">Verified DLCP Registrations</span>
+          </div>
+
+          <div>
+            <span className="text-slate-400 text-[11px] block">Resident Hosts</span>
+            <span className="font-mono font-bold text-white text-sm">
+              {INSIDE_AIRBNB_DC_SUMMARY.singleListingHostsPercent}%
+            </span>
+            <span className="text-[10px] text-slate-400 block">Single-listing primary homes</span>
+          </div>
+
+          <div>
+            <span className="text-slate-400 text-[11px] block">Citywide Median ADR</span>
+            <span className="font-mono font-bold text-white text-sm">
+              ${INSIDE_AIRBNB_DC_SUMMARY.medianNightlyPrice}
+            </span>
+            <span className="text-[10px] text-slate-400 block">All property types</span>
+          </div>
+
+          <div>
+            <span className="text-slate-400 text-[11px] block">Avg Nights Booked/Yr</span>
+            <span className="font-mono font-bold text-[#00C805] text-sm">
+              {INSIDE_AIRBNB_DC_SUMMARY.averageNightsBookedPerYear} nights
+            </span>
+            <span className="text-[10px] text-slate-400 block">Active listings in District</span>
           </div>
         </div>
       </div>
@@ -359,6 +427,29 @@ export const AirbnbCompsExplorer: React.FC<AirbnbCompsExplorerProps> = ({
                     <span>{listing.bathrooms} Bath</span>
                     <span>•</span>
                     <span>Up to {listing.accommodates} Guests</span>
+                  </div>
+
+                  {/* Inside Airbnb & DLCP License Verification */}
+                  <div className="flex items-center gap-2 flex-wrap pt-0.5 text-[11px]">
+                    {listing.dlcpLicenseNumber && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-mono font-semibold border border-emerald-500/30">
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>{listing.dlcpLicenseNumber}</span>
+                      </span>
+                    )}
+                    {listing.minimumNights && (
+                      <span className="px-2 py-0.5 rounded-md bg-[#0B0E14] text-slate-300 font-medium border border-slate-800 text-[10px]">
+                        {listing.minimumNights}-night min
+                      </span>
+                    )}
+                    {listing.reviewsPerMonth && (
+                      <span className="px-2 py-0.5 rounded-md bg-[#0B0E14] text-slate-300 font-medium border border-slate-800 text-[10px]">
+                        {listing.reviewsPerMonth} rev/mo
+                      </span>
+                    )}
+                    <span className="text-[10px] text-blue-400 font-medium">
+                      Inside Airbnb Verified ✓
+                    </span>
                   </div>
 
                   {/* Amenities Badges */}
