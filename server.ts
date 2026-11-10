@@ -24,54 +24,42 @@ const ai = new GoogleGenAI({
   },
 });
 
-const ADVISOR_SYSTEM_INSTRUCTION = `You are the DC Short-Term Rental (STR) Viability & Compliance Advisor, an authoritative business decision-support expert assisting Washington, D.C. homeowners in evaluating whether to list their property on Airbnb versus traditional 12-month leasing.
+const ADVISOR_SYSTEM_INSTRUCTION = `You are the D.C. Rental Advisor, an authoritative business decision-support expert assisting Washington, D.C. homeowners in deciding between listing on Airbnb versus keeping a 12-month tenant.
 
-OPERATIONAL DIRECTIVES & LOCAL LAWS:
-1. REGULATORY COMPLIANCE (D.C. Department of Licensing and Consumer Protection - DLCP):
-   - Primary Residence Rule: D.C. law strictly restricts STRs to the owner's primary residence (where the owner resides at least 183 days per year, D.C. Code § 30-201).
-   - Investment / Secondary Properties: If an owner indicates the property is NOT their primary residence, flag an IMMEDIATE RED LIGHT / HIGH RISK penalty (D.C. does not grant standard STR licenses for secondary investment properties).
-   - Basement / Accessory Dwelling Units (ADUs): If renting an English basement or ADU in a primary residence, note that it falls under D.C. "Vacation Rental" rules and requires proper licensing, inspections, smoke/CO detector certifications, and Certificate of Occupancy.
-   - 90-Day Unhosted Cap: Vacation Rental endorsements without owner present are capped at 90 days/calendar year in D.C. unless granted a hardship exemption (e.g., military deployment or temporary out-of-area job relocation).
+CORE D.C. LEGAL RULES & FINANCIAL FACTS (Strictly Enforce):
+1. PRIMARY RESIDENCE:
+   - D.C. only licenses short-term rentals in the home the owner lives in as their primary residence.
+   - If it is not their primary home, Airbnb is NOT allowed under D.C. law; you must recommend a 12-month tenant or a 30+ day furnished rental.
 
-2. FINANCIAL & TAX FORMULAS:
-   - D.C. Transient Occupancy Tax: Explicitly apply a 14.95% tax rate on gross short-term rental revenue.
-   - Platform & Operating Costs: Deduct 3% standard platform fee, estimated turnover/cleaning costs ($120–$180 per stay), and monthly utility overhead.
-   - Long-Term Lease Baseline: Compare net Airbnb income against the user's alternative long-term monthly rental estimate.
-   - Required Breakeven Occupancy: Calculate the minimum occupancy rate (%) required for short-term net revenue to match the net revenue of a 12-month tenant.
+2. 90-NIGHT LIMIT:
+   - The 90-night limit depends ONLY on whether the owner is on the property during the stay.
+   - Owner home during stays = "Short-Term Rental" endorsement with NO annual night limit (up to 365 nights).
+   - Owner away during stays = "Vacation Rental" endorsement with a hard limit of 90 nights per calendar year in total.
+   - An English basement is NOT automatically capped: if the owner lives upstairs, there is NO limit.
+   - For an away host, booked nights can NEVER exceed 90 nights in any calculation or projection.
 
-RESPONSE FORMAT MANDATE:
-Always format your response using clean Markdown with the following exact 4 sections:
+3. D.C. LODGING TAX (15.95%):
+   - The lodging tax is 15.95% (14.95% transient occupancy + 1% convention center surcharge).
+   - The guest pays this on top of the nightly rate, and Airbnb collects and remits it directly to the D.C. Office of Tax and Revenue.
+   - Show or mention the amount, but NEVER subtract it from the owner's income.
 
-1. 🚦 Regulatory Compliance & License Status
-   - Direct Status: [GREEN: Fully Compliant | YELLOW: Compliant with Conditions | RED: Non-Compliant / High Risk]
-   - Bulleted explanation referencing specific D.C. DLCP rules (Primary residence criteria, licensing steps, inspections).
+4. INSURANCE & LICENSING REQUIREMENTS:
+   - Minimum liability insurance is $250,000.
+   - The D.C. short-term rental license fee is $99 for two years.
+   - Never state that the owner already has a certificate, insurance, or safety equipment; show these as a to-do list.
 
-2. 📊 Financial Comparison: Airbnb vs. Long-Term Lease
-   - Display a breakdown including:
-     • Projected Monthly Gross Revenue (based on ADR and selected occupancy rate)
-     • Mandatory D.C. Transient Occupancy Tax (-14.95%)
-     • Platform, Cleaning, & Utility Expenses
-     • Net Monthly Airbnb Profit
-     • Net Monthly Long-Term Lease Profit (Alternative)
-     • Breakeven Occupancy Rate (Min % needed to beat a long-term tenant)
+5. UNIFIED RECOMMENDATION:
+   - You must honor the app's deterministic recommendation: "airbnb" (List it on Airbnb), "long_term" (Keep a 12-month tenant), or "not_allowed" (Airbnb is not allowed under D.C. law). When the annual profit difference between Airbnb and long-term is within 5%, explain that "It's nearly a tie."
+   - Never contradict this verdict.
 
-3. 📍 Neighborhood & Event Strategy
-   - Provide 2–3 hyper-local pricing recommendations based on the specific D.C. neighborhood (e.g., Capitol Hill business travel, Dupont Circle tourism, Howard/GWU graduation surges).
-
-4. 💡 Strategic Recommendation & Action Plan
-   - A 2-sentence bottom-line verdict advising the homeowner whether to proceed with Airbnb, stick to long-term leasing, or adjust their strategy.
-
-TONAL & LANGUAGE GUIDELINES:
-Maintain an objective, analytical, and professional tone.
-CRITICAL TERMINOLOGY MANDATE: Refrain from using convoluted abbreviations so that any homeowner (including non-tech-savvy users) can easily understand.
-- Use "Short-Term Rental" or "Airbnb" instead of "STR"
-- Use "Nightly Price" or "Nightly Rate" instead of "ADR"
-- Use "D.C. Business Licensing Department" instead of bare "DLCP"
-- Use "Certificate of Occupancy" instead of "C of O"
-- Use "D.C. Tax Office" instead of "OTR"
-- Use "Basement or In-Law Suite" instead of "ADU"
-- Use "Basic Business License" instead of "BBL"
-Prioritize legal accuracy and financial realism over encouraging Airbnb listing creation. If the user's setup violates D.C. law, state it clearly upfront.`;
+LANGUAGE & TERMINOLOGY MANDATE:
+Use plain English and avoid jargon abbreviations:
+- Say "short-term rental" or "Airbnb", never "STR"
+- Say "nightly rate" or "price per night", never "ADR"
+- Say "D.C. Business Licensing Department", never "DLCP"
+- Say "Certificate of Occupancy", never "C of O"
+- Say "D.C. Tax Office", never "OTR"
+- Say "basement in-law suite", never "ADU"`;
 
 async function generateWithFallback(prompt: string, systemInstruction: string): Promise<string> {
   const models = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
@@ -108,57 +96,38 @@ app.post('/api/advisor/generate', async (req, res) => {
       return res.status(400).json({ error: 'Missing required configuration data' });
     }
 
-    const prompt = `Analyze this Washington, D.C. property and generate your complete, formal 4-section advisory report based on D.C. law and local market conditions:
+    const prompt = `Analyze this Washington, D.C. property and provide a decision-support summary aligned with our deterministic calculation:
+    
+UNIFIED VERDICT:
+- Recommendation: ${financialOutputs.recommendation}
+- Headline: "${financialOutputs.verdictHeadline}"
+- Reason: "${financialOutputs.verdictReason}"
+- Is Near Tie (<5% difference): ${financialOutputs.isNearTie ? 'YES' : 'NO'}
 
 PROPERTY PROFILE:
 - Property Nickname: ${propertyConfig.nickname || 'Subject Property'}
 - Neighborhood: ${neighborhood?.name || 'Washington, D.C.'} (${neighborhood?.ward || 'District of Columbia'})
 - Property Type: ${propertyConfig.propertyType}
-- Owner Primary Residence (183+ days/year): ${propertyConfig.isPrimaryResidence ? 'YES' : 'NO - Secondary / Investment Property'}
-- Hosting Style: ${propertyConfig.hostingType === 'hosted' ? 'Hosted (Owner present in home)' : 'Unhosted (Owner absent / exclusive guest access)'}
-- Hardship Exemption Eligible: ${propertyConfig.hasHardshipExemption ? 'YES' : 'NO'}
-- Clean Hands Certificate: ${propertyConfig.hasCleanHandsCertificate ? 'Verified' : 'Pending / Not Obtained'}
-- Smoke & CO Alarms Verified: ${propertyConfig.hasSmokeAndCoDetectors ? 'YES' : 'NO'}
-- Fire Extinguisher (2A:10B:C): ${propertyConfig.hasFireExtinguisher ? 'YES' : 'NO'}
-- Certificate of Occupancy (C of O / ADU): ${propertyConfig.hasCertificateOfOccupancy ? 'YES' : 'NO'}
-- HOA / Condo Bylaws Permit STR: ${propertyConfig.hoaBylawsPermitSTR ? 'YES' : 'NO / Unverified'}
-- Commercial STR Liability Insurance ($500k+): ${propertyConfig.hasStrLiabilityInsurance ? 'YES' : 'NO'}
+- Owner Primary Residence: ${propertyConfig.isPrimaryResidence ? 'YES' : 'NO - Secondary / Investment Property (Airbnb NOT allowed)'}
+- Owner Present During Stays: ${propertyConfig.isHomeDuringStay ? 'YES (No 90-night limit)' : 'NO (Hard 90-night annual limit)'}
 
-FINANCIAL PARAMETERS:
-- Average Daily Rate (ADR): $${financialInputs.averageDailyRate}/night
-- Projected Occupancy Rate: ${financialInputs.occupancyRate}%
-- Average Stay Length: ${financialInputs.averageStayLength} nights
-- Turnover / Cleaning Cost per Stay: $${financialInputs.turnoverCleaningCost}
-- Cleaning Fee Charged to Guest: $${financialInputs.cleaningFeeChargedToGuest}
-- Platform Host Fee: ${financialInputs.platformFeePercent}%
-- D.C. Transient Occupancy Tax: ${financialInputs.dcTransientTaxPercent}%
-- Monthly Utilities: $${financialInputs.monthlyUtilities}
-- Monthly Supplies & Wear: $${financialInputs.monthlySuppliesAndWear}
-- Monthly Insurance & Licensing: $${financialInputs.monthlyInsuranceAndLicense}
+FINANCIAL COMPARISON:
+- Expected Nights Host Planned: ${financialInputs.expectedNightsBooked ?? Math.round((financialInputs.occupancyRate / 100) * 365)} nights/year
+- Legally Allowed Booked Nights: ${financialOutputs.actualBookedNights} nights/year (Max allowed under D.C. law: ${financialOutputs.allowedNightCap} nights)
+- Nightly Rate: $${financialInputs.averageDailyRate}/night
+- 15.95% D.C. Lodging Tax (Guest-Paid): $${Math.round(financialOutputs.dcTransientTaxAmount)} (Airbnb remits directly; not deducted from host)
+- Gross Annual Airbnb Revenue: $${Math.round(financialOutputs.grossAnnualSTRRevenue)}
+- Total Operating Costs (Platform fee, cleaning, utilities, wear): $${Math.round(financialOutputs.annualOperatingCosts)}
+- Net Annual Airbnb Profit: $${Math.round(financialOutputs.netAnnualSTRProfit)}
+- Net Annual 12-Month Lease Profit: $${Math.round(financialOutputs.netAnnualLongTermProfit)} (Based on $${financialInputs.longTermMonthlyRent}/month estimated rent)
+- Annual Dollar Difference: $${Math.round(Math.abs(financialOutputs.annualProfitDelta))} (${financialOutputs.annualProfitDelta >= 0 ? 'favoring Airbnb' : 'favoring 12-month lease'})
+${financialOutputs.hostedUpsideDifference ? `- Hosted Upside (if owner stays home during visits): +$${Math.round(financialOutputs.hostedUpsideDifference)}/year (${financialOutputs.hostedUpsideAnnualNights} nights)` : ''}
 
-LONG-TERM LEASE BASELINE:
-- Long-Term Contract Rent: $${financialInputs.longTermMonthlyRent}/month
-- Long-Term Property Management Fee: ${financialInputs.longTermPropertyManagementPercent}%
-- Vacancy Reserve: ${financialInputs.longTermVacancyPercent}%
-- Maintenance Reserve: $${financialInputs.longTermMaintenanceReserve}/month
-
-COMPUTED METRICS:
-- Projected Monthly Gross STR Revenue: $${Math.round(financialOutputs.grossMonthlySTRRevenue)}
-- D.C. Transient Occupancy Tax (-14.95%): -$${Math.round(financialOutputs.dcTransientTaxAmount)}
-- Platform Host Fee (3%): -$${Math.round(financialOutputs.platformFeeAmount)}
-- Net Monthly Cleaning Turnover: -$${Math.round(financialOutputs.netTurnoverCost)}
-- Monthly Fixed Expenses: -$${Math.round(financialOutputs.fixedMonthlyExpenses)}
-- Net Monthly STR Profit: $${Math.round(financialOutputs.netMonthlySTRProfit)}
-- Net Monthly Long-Term Lease Profit: $${Math.round(financialOutputs.netMonthlyLongTermProfit)}
-- Required Breakeven Occupancy Rate: ${financialOutputs.breakevenOccupancyRate}% (${financialOutputs.breakevenNightsNeeded} nights/month)
-- Breakeven Achievable: ${financialOutputs.isBreakevenFeasible ? 'YES' : 'NO (Unfeasible at current ADR)'}
-- Subject to 90-Day D.C. Annual Cap: ${financialOutputs.isSubjectTo90DayCap ? 'YES (Annual max 90 unhosted nights)' : 'NO (Hosted STR endorsement)'}
-
-Generate your comprehensive decision-support report in clean Markdown using the mandatory 4 sections:
-1. 🚦 Regulatory Compliance & License Status
-2. 📊 Financial Comparison: Airbnb vs. Long-Term Lease
-3. 📍 Neighborhood & Event Strategy
-4. 💡 Strategic Recommendation & Action Plan`;
+REQUIRED FORMAT (Clean Markdown):
+1. 🚦 D.C. Legal & Compliance Status
+2. 📊 Financial Comparison: Airbnb vs. 12-Month Lease
+3. 📍 Neighborhood & Event Strategy for ${neighborhood?.name || 'Washington, D.C.'}
+4. 💡 Strategic Recommendation (Must strictly agree with the unified verdict: "${financialOutputs.verdictHeadline}")`;
 
     const reportMarkdown = await generateWithFallback(prompt, ADVISOR_SYSTEM_INSTRUCTION);
     return res.json({ reportMarkdown });

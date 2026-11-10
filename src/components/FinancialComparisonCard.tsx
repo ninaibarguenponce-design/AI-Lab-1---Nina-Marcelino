@@ -92,10 +92,10 @@ export const FinancialComparisonCard: React.FC<FinancialComparisonCardProps> = (
               <span className="text-xs font-normal text-slate-500"> / month</span>
             </div>
             <div className="text-xs text-slate-500 font-mono mt-1">
-              Annualized: {formatCurrency(financials.annualUncappedSTRProfit)}
+              Annualized: {formatCurrency(financials.annualUncappedSTRProfit ?? financials.airbnbNetAnnual)}
               {financials.isSubjectTo90DayCap && (
                 <span className="text-amber-800 font-semibold block text-[11px] mt-0.5">
-                  ⚠️ Capped at 90 days/yr by D.C. law: {formatCurrency(financials.annualCappedSTRProfit)}/yr
+                  ⚠️ Capped at 90 days/yr by D.C. law: {formatCurrency(financials.annualCappedSTRProfit ?? financials.airbnbNetAnnual)}/yr
                 </span>
               )}
             </div>
@@ -178,7 +178,7 @@ export const FinancialComparisonCard: React.FC<FinancialComparisonCardProps> = (
               <span className="text-xs font-normal text-slate-500"> / month</span>
             </div>
             <div className="text-xs text-slate-500 font-mono mt-1">
-              Annualized: {formatCurrency(financials.annualLongTermProfit)}/yr (Zero 90-day cap)
+              Annualized: {formatCurrency(financials.annualLongTermProfit ?? financials.longTermNetAnnual)}/yr (Zero 90-day cap)
             </div>
           </div>
 

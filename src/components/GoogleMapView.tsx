@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { MapPin, Navigation } from 'lucide-react';
 import { DC_NEIGHBORHOODS } from '../data/dcNeighborhoods';
@@ -13,8 +13,24 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
   selectedNeighborhoodId,
   onSelectNeighborhood,
 }) => {
-  const apiKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || '';
+  const rawApiKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY || '';
+  // Verify key is non-empty and not a dummy placeholder before initializing Google Maps
+  const apiKey =
+    typeof rawApiKey === 'string' &&
+    rawApiKey.trim() !== '' &&
+    !rawApiKey.includes('YOUR_') &&
+    !rawApiKey.includes('TODO') &&
+    rawApiKey.length > 10
+      ? rawApiKey.trim()
+      : '';
+
   const [mapError, setMapError] = useState(false);
+
+  useEffect(() => {
+    const handleAuthFailure = () => setMapError(true);
+    window.addEventListener('gmp-auth-failure', handleAuthFailure);
+    return () => window.removeEventListener('gmp-auth-failure', handleAuthFailure);
+  }, []);
 
   const selectedNeighborhood =
     DC_NEIGHBORHOODS.find((n) => n.id === selectedNeighborhoodId) ||

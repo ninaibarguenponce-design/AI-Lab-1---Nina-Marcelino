@@ -2,23 +2,28 @@ import React, { useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
-  Scale,
-  ShieldCheck,
-  ShieldAlert,
-  AlertTriangle,
-  ArrowRight,
   RotateCcw,
   Sliders,
   FileText,
-  CheckCircle2,
-  HelpCircle,
-  ExternalLink,
-  Search,
-  Sparkles
+  AlertTriangle,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Building2,
+  Calendar,
+  Sparkles,
+  Info,
+  ShieldCheck,
+  Home
 } from 'lucide-react';
-import { ComplianceEvaluation, FinancialInputs, FinancialOutputs, NeighborhoodData, PropertyConfig } from '../types';
-
-import { Building2 } from 'lucide-react';
+import {
+  ComplianceEvaluation,
+  FinancialInputs,
+  FinancialOutputs,
+  NeighborhoodData,
+  PropertyConfig
+} from '../types';
+import { DC_LODGING_TAX_PERCENT, VACATION_RENTAL_NIGHT_CAP } from '../data/dcRules';
 
 interface RobinhoodVerdictProps {
   financials: FinancialOutputs;
@@ -27,11 +32,12 @@ interface RobinhoodVerdictProps {
   compliance: ComplianceEvaluation;
   neighborhood: NeighborhoodData;
   onOpenReport: () => void;
-  onOpenTweakModal: () => void;
+  onOpenTweakModal?: () => void;
   onRestart: () => void;
-  onOpenLongTermWorkflow?: () => void;
-  onNavigateToComps?: () => void;
-  onNavigateToLaunch?: () => void;
+  onEditHome: () => void;
+  onBackToPrevious?: () => void;
+  onNavigateToNextSteps?: () => void;
+  onOpenPricingCalendar?: () => void;
 }
 
 export const RobinhoodVerdict: React.FC<RobinhoodVerdictProps> = ({
@@ -43,364 +49,323 @@ export const RobinhoodVerdict: React.FC<RobinhoodVerdictProps> = ({
   onOpenReport,
   onOpenTweakModal,
   onRestart,
-  onOpenLongTermWorkflow,
-  onNavigateToComps,
-  onNavigateToLaunch,
+  onEditHome,
+  onBackToPrevious,
+  onNavigateToNextSteps,
+  onOpenPricingCalendar,
 }) => {
-  const [period, setPeriod] = useState<'monthly' | 'annual'>('monthly');
+  const [period, setPeriod] = useState<'annual' | 'monthly'>('annual');
 
-  const isAirbnbWinning = financials.monthlyProfitDelta > 0;
-  const isRedLight = compliance.status === 'RED';
+  const formatCurrency = (val: number) => `$${Math.round(val).toLocaleString('en-US')}`;
 
-  const formatCurrency = (val: number) =>
-    `$${Math.round(val).toLocaleString('en-US')}`;
+  const isAirbnbWinning = financials.annualProfitDelta > 0 && !financials.isNearTie;
+  const isNotAllowed = financials.recommendation === 'not_allowed';
+  const isNearTie = financials.isNearTie;
 
-  const displayedDelta =
-    period === 'monthly'
-      ? financials.monthlyProfitDelta
-      : financials.annualProfitDelta;
-
-  const displayedSTRNet =
-    period === 'monthly'
-      ? financials.netMonthlySTRProfit
-      : financials.isSubjectTo90DayCap
-      ? financials.annualCappedSTRProfit
-      : financials.annualUncappedSTRProfit;
-
-  const displayedLongTermNet =
-    period === 'monthly'
-      ? financials.netMonthlyLongTermProfit
-      : financials.annualLongTermProfit;
+  const displayedAirbnb = period === 'annual' ? financials.airbnbNetAnnual : financials.netMonthlySTRProfit;
+  const displayedLongTerm = period === 'annual' ? financials.longTermNetAnnual : financials.netMonthlyLongTermProfit;
+  const displayedDelta = period === 'annual' ? financials.annualProfitDelta : financials.monthlyProfitDelta;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* ROBINHOOD HERO FINANCIAL CARD */}
+      {/* Top Controls: Saved Home Status, Edit My Home, Start Over */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0B0E14] border border-slate-800/80 px-5 py-3 rounded-2xl">
+        <div className="flex items-center gap-2 text-xs text-slate-300">
+          <span className="w-2 h-2 rounded-full bg-[#00C805]"></span>
+          <span>
+            {config.nickname || `${neighborhood.name.split('/')[0]} Home`} ·{' '}
+            <strong className="text-white">{config.isHomeDuringStay ? 'Owner on-site' : 'Owner away'}</strong>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onEditHome}
+            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Sliders className="w-3.5 h-3.5 text-[#00C805]" />
+            <span>Edit my home</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onRestart}
+            className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white text-xs font-medium transition-all flex items-center gap-1 cursor-pointer"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Start over</span>
+          </button>
+        </div>
+      </div>
+
+      {/* HERO DECISION CARD */}
       <div className="bg-[#121824] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
         {/* Soft Background Accent Glow */}
         <div
           className={`absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none ${
-            isRedLight
+            isNotAllowed
               ? 'bg-red-500'
               : isAirbnbWinning
               ? 'bg-[#00C805]'
+              : isNearTie
+              ? 'bg-amber-500'
               : 'bg-blue-500'
           }`}
         />
 
-        {/* Top Header Badge & Period Switch */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
-                isRedLight
-                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                  : compliance.status === 'YELLOW'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  : 'bg-[#00C805]/20 text-[#00C805] border border-[#00C805]/30'
-              }`}
-            >
-              {isRedLight ? (
-                <>
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                  <span>RED LIGHT: Not Allowed in D.C.</span>
-                </>
-              ) : compliance.status === 'YELLOW' ? (
-                <>
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>YELLOW LIGHT: Compliant with Checklist</span>
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>GREEN LIGHT: Fully Legal to List</span>
-                </>
-              )}
-            </span>
-            <span className="text-xs text-slate-400">
-              {neighborhood.name.split('/')[0]}
-            </span>
-          </div>
+        {/* Period Switcher (Annual by default) */}
+        <div className="flex items-center justify-between">
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+              isNotAllowed
+                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                : isNearTie
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                : isAirbnbWinning
+                ? 'bg-[#00C805]/20 text-[#00C805] border border-[#00C805]/30'
+                : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+            }`}
+          >
+            {isNotAllowed ? 'Not Allowed' : isNearTie ? 'Nearly a Tie' : isAirbnbWinning ? 'Airbnb Wins' : '12-Month Lease Wins'}
+          </span>
 
-          {/* Robinhood Period Switch */}
-          <div className="flex items-center p-1 bg-[#0B0E14] rounded-full border border-slate-800 self-start sm:self-auto text-xs font-semibold">
-            <button
-              onClick={() => setPeriod('monthly')}
-              className={`px-3 py-1 rounded-full transition-all ${
-                period === 'monthly'
-                  ? 'bg-white text-black font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setPeriod('annual')}
-              className={`px-3 py-1 rounded-full transition-all ${
-                period === 'annual'
-                  ? 'bg-white text-black font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Annual
-            </button>
-          </div>
+          {!isNotAllowed && (
+            <div className="flex items-center bg-slate-900 p-1 rounded-full border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setPeriod('annual')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  period === 'annual'
+                    ? 'bg-[#00C805] text-black shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Annual
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriod('monthly')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  period === 'monthly'
+                    ? 'bg-[#00C805] text-black shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Monthly
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Big Robinhood Metric Display */}
-        <div className="space-y-1">
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            {isRedLight
-              ? 'Estimated Long-Term Safe Income'
-              : isAirbnbWinning
-              ? 'Extra Money in Your Pocket with Airbnb'
-              : 'Extra Money with a Regular 12-Month Tenant'}
-          </div>
+        {/* 1. Open with one plain sentence */}
+        <div className="space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            {financials.verdictHeadline}
+          </h1>
 
-          <div className="flex items-baseline gap-3 flex-wrap">
-            <div
-              className={`text-4xl sm:text-5xl font-black font-mono tracking-tight ${
-                isRedLight
-                  ? 'text-white'
+          {/* 2. Annual dollar difference */}
+          {!isNotAllowed && (
+            <div className="flex items-baseline gap-2 pt-1">
+              <span className="text-4xl sm:text-5xl font-mono font-black text-[#00C805]">
+                {formatCurrency(Math.abs(displayedDelta))}
+              </span>
+              <span className="text-sm sm:text-base text-slate-300 font-semibold">
+                {period === 'annual' ? '/ year' : '/ month'}{' '}
+                {isNearTie
+                  ? 'difference between options'
                   : isAirbnbWinning
-                  ? 'text-[#00C805]'
-                  : 'text-slate-200'
+                  ? 'more with Airbnb'
+                  : 'more with a 12-month tenant'}
+              </span>
+            </div>
+          )}
+
+          {/* 3. One sentence explaining why */}
+          <p className="text-sm sm:text-base text-slate-300 leading-relaxed pt-2">
+            {financials.verdictReason}
+          </p>
+        </div>
+
+        {/* If 90-night limit is what causes Airbnb to lose: Show what owner would earn by being home during stays */}
+        {financials.hostedUpsideNetAnnual !== undefined && financials.isSubjectTo90DayCap && (
+          <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2 text-xs sm:text-sm text-amber-200">
+            <div className="flex items-center gap-2 font-bold text-amber-300">
+              <Info className="w-4 h-4" />
+              <span>What if you were home while guests stay?</span>
+            </div>
+            <p className="leading-relaxed text-slate-300">
+              D.C.'s 90-night limit only applies when you are away from the property. If you live on-site (for example, living upstairs while renting the English basement), D.C. permits year-round hosting. At {financials.hostedUpsideNights} booked nights, you would earn about{' '}
+              <strong className="text-[#00C805]">{formatCurrency(financials.hostedUpsideNetAnnual)} per year</strong>
+              {financials.hostedUpsideDelta !== undefined && financials.hostedUpsideDelta >= -1500
+                ? ' — making it nearly a tie with a 12-month tenant.'
+                : ' — significantly closing the gap.'}
+            </p>
+          </div>
+        )}
+
+        {/* Side-by-Side Financial Comparison */}
+        {!isNotAllowed && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            {/* Airbnb Card */}
+            <div
+              className={`p-5 rounded-2xl border transition-all ${
+                isAirbnbWinning || isNearTie
+                  ? 'bg-slate-900/90 border-[#00C805]/40 ring-1 ring-[#00C805]/20'
+                  : 'bg-slate-900/50 border-slate-800'
               }`}
             >
-              {isRedLight
-                ? formatCurrency(displayedLongTermNet)
-                : `${isAirbnbWinning ? '+' : ''}${formatCurrency(displayedDelta)}`}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#00C805]"></span>
+                  <span>Airbnb (Short-Term)</span>
+                </span>
+                <span className="text-xs text-slate-400 font-mono">
+                  {financials.bookedNightsPerYear} nights/yr
+                </span>
+              </div>
+
+              <div className="py-4 space-y-1">
+                <div className="text-2xl sm:text-3xl font-mono font-black text-white">
+                  {formatCurrency(displayedAirbnb)}
+                </div>
+                <div className="text-[11px] text-slate-400 font-medium">
+                  What you keep after fees, cleaning, and utilities
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-xs text-slate-400 pt-2 border-t border-slate-800/80 font-mono">
+                <div className="flex justify-between">
+                  <span>Gross nightly revenue:</span>
+                  <span className="text-slate-200">
+                    {formatCurrency(period === 'annual' ? financials.grossAnnualSTRRevenue : financials.grossMonthlySTRRevenue)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Airbnb host fee (3%):</span>
+                  <span className="text-slate-300">
+                    -{formatCurrency(period === 'annual' ? financials.platformFeeAnnual : financials.platformFeeAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Net turnover & cleaning:</span>
+                  <span className="text-slate-300">
+                    -{formatCurrency(period === 'annual' ? financials.annualCleaningCost : financials.netTurnoverCost)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Utilities & fixed costs:</span>
+                  <span className="text-slate-300">
+                    -{formatCurrency(period === 'annual' ? financials.annualFixedExpenses : financials.fixedMonthlyExpenses)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[11px] text-emerald-400 pt-1 border-t border-slate-800">
+                  <span>D.C. Lodging Tax ({DC_LODGING_TAX_PERCENT}%):</span>
+                  <span>Paid by guest</span>
+                </div>
+              </div>
             </div>
-            <div className="text-xs sm:text-sm text-slate-400 font-medium">
-              / {period === 'monthly' ? 'month' : 'year'}
-            </div>
-          </div>
 
-          <p className="text-xs text-slate-400 pt-1">
-            {isRedLight
-              ? 'Because D.C. law prohibits STRs on secondary investment properties, a regular tenant is your legally safe option.'
-              : isAirbnbWinning
-              ? `Airbnb brings you ${formatCurrency(displayedSTRNet)}/${period === 'monthly' ? 'mo' : 'yr'} vs ${formatCurrency(displayedLongTermNet)}/${period === 'monthly' ? 'mo' : 'yr'} with a regular tenant.`
-              : `A regular 12-month tenant makes you ${formatCurrency(displayedLongTermNet)}/${period === 'monthly' ? 'mo' : 'yr'} with zero turnover labor or utility bills.`}
-          </p>
-        </div>
+            {/* 12-Month Tenant Card */}
+            <div
+              className={`p-5 rounded-2xl border transition-all ${
+                !isAirbnbWinning && !isNearTie
+                  ? 'bg-slate-900/90 border-blue-500/40 ring-1 ring-blue-500/20'
+                  : 'bg-slate-900/50 border-slate-800'
+              }`}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                  <span>12-Month Tenant</span>
+                </span>
+                <span className="text-xs text-slate-400 font-mono">Guaranteed lease</span>
+              </div>
 
-        {/* 2 Comparison Pill Boxes */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="p-3.5 bg-[#0B0E14] rounded-2xl border border-slate-800">
-            <span className="text-[11px] text-slate-400 block font-medium">
-              Airbnb Net Profit
-            </span>
-            <div className="text-xl font-bold font-mono text-white mt-0.5">
-              {formatCurrency(displayedSTRNet)}
-              <span className="text-xs font-normal text-slate-400">/{period === 'monthly' ? 'mo' : 'yr'}</span>
-            </div>
-            <span className="text-[10px] text-slate-500 block mt-0.5">
-              After cleaning, utilities & 14.95% D.C. tax
-            </span>
-          </div>
+              <div className="py-4 space-y-1">
+                <div className="text-2xl sm:text-3xl font-mono font-black text-white">
+                  {formatCurrency(displayedLongTerm)}
+                </div>
+                <div className="text-[11px] text-slate-400 font-medium">
+                  What you keep after vacancy & maintenance
+                </div>
+              </div>
 
-          <div className="p-3.5 bg-[#0B0E14] rounded-2xl border border-slate-800">
-            <span className="text-[11px] text-slate-400 block font-medium">
-              12-Month Tenant Net
-            </span>
-            <div className="text-xl font-bold font-mono text-white mt-0.5">
-              {formatCurrency(displayedLongTermNet)}
-              <span className="text-xs font-normal text-slate-400">/{period === 'monthly' ? 'mo' : 'yr'}</span>
-            </div>
-            <span className="text-[10px] text-slate-500 block mt-0.5">
-              Guaranteed rent, tenant pays utilities
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3 HIGH-IMPACT QUALITY CARDS (MOM-FRIENDLY & NOT EXTENSE) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Card 1: The Breakeven Number */}
-        <div className="bg-[#121824] border border-slate-800 rounded-3xl p-5 space-y-2 shadow-lg">
-          <div className="w-8 h-8 rounded-full bg-[#00C805]/10 text-[#00C805] flex items-center justify-center text-xs font-bold font-mono">
-            🎯
-          </div>
-          <h3 className="text-sm font-bold text-white">
-            Breakeven Nights
-          </h3>
-          <div className="text-2xl font-black font-mono text-[#00C805]">
-            {financials.isBreakevenFeasible ? (
-              <span>{Math.ceil(financials.breakevenNightsNeeded)} nights</span>
-            ) : (
-              <span className="text-red-400 text-lg">Unfeasible</span>
-            )}
-          </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            {financials.isBreakevenFeasible
-              ? `You only need to rent ${Math.ceil(financials.breakevenNightsNeeded)} nights a month (${financials.breakevenOccupancyRate}%) to equal a full-time tenant.`
-              : 'At this price, expenses are too high. Increase your nightly price to break even.'}
-          </p>
-        </div>
-
-        {/* Card 2: D.C. Legal Status */}
-        <div className="bg-[#121824] border border-slate-800 rounded-3xl p-5 space-y-2 shadow-lg">
-          <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-xs font-bold font-mono">
-            ⚖️
-          </div>
-          <h3 className="text-sm font-bold text-white">
-            D.C. License Rule
-          </h3>
-          <div className="text-sm font-bold text-slate-200">
-            {config.propertyType === 'hosted_room' ? (
-              <span className="text-[#00C805]">No 90-Day Cap!</span>
-            ) : config.isPrimaryResidence ? (
-              <span className="text-amber-300">90-Day Annual Cap</span>
-            ) : (
-              <span className="text-red-400">Strictly Prohibited</span>
-            )}
-          </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            {config.propertyType === 'hosted_room'
-              ? 'Because you sleep in the house during stays, D.C. allows you to rent all 365 days a year.'
-              : config.isPrimaryResidence
-              ? 'Because guests have the whole space to themselves, D.C. caps bookings at 90 nights a year.'
-              : 'D.C. only grants Airbnb licenses for homes where the owner lives 183+ days a year.'}
-          </p>
-        </div>
-
-        {/* Card 3: What You Need to Do */}
-        <div className="bg-[#121824] border border-slate-800 rounded-3xl p-5 space-y-2 shadow-lg">
-          <div className="w-8 h-8 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center text-xs font-bold font-mono">
-            📋
-          </div>
-          <h3 className="text-sm font-bold text-white">
-            Checklist to List
-          </h3>
-          <ul className="text-xs text-slate-300 space-y-1">
-            <li className="flex items-center gap-1.5">
-              <span className="text-[#00C805]">✓</span>
-              <span>Clean Hands Tax Certificate</span>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <span className="text-[#00C805]">✓</span>
-              <span>Smoke & carbon monoxide detectors</span>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <span className="text-[#00C805]">✓</span>
-              <span>D.C. Business License</span>
-            </li>
-          </ul>
-          <p className="text-[11px] text-slate-400 pt-1">
-            Airbnb collects the 14.95% D.C. lodging tax automatically!
-          </p>
-        </div>
-      </div>
-
-      {/* Special Callout if Property does not qualify or if Long-Term is superior */}
-      {(isRedLight || !isAirbnbWinning) && onOpenLongTermWorkflow && (
-        <div className="p-5 bg-gradient-to-r from-emerald-950/40 via-[#121824] to-emerald-950/20 border border-emerald-500/40 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white">
-                {isRedLight
-                  ? 'Ready to rent legally to a 12-Month Tenant?'
-                  : 'A 12-Month Tenant makes more money with zero turnover work'}
-              </h4>
-              <p className="text-xs text-slate-300">
-                Explore our plain-English D.C. Landlord Roadmap and cash flow calculator.
-              </p>
+              <div className="space-y-1.5 text-xs text-slate-400 pt-2 border-t border-slate-800/80 font-mono">
+                <div className="flex justify-between">
+                  <span>Contract monthly rent:</span>
+                  <span className="text-slate-200">
+                    {formatCurrency(inputs.longTermMonthlyRent)}/mo
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Vacancy reserve (5%):</span>
+                  <span className="text-slate-300">
+                    -{formatCurrency((inputs.longTermMonthlyRent * 0.05) * (period === 'annual' ? 12 : 1))}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Maintenance reserve:</span>
+                  <span className="text-slate-300">
+                    -{formatCurrency(inputs.longTermMaintenanceReserve * (period === 'annual' ? 12 : 1))}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Utilities paid by:</span>
+                  <span className="text-slate-200">Tenant</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+                  <span>Host turnover labor:</span>
+                  <span className="text-slate-300">0 hours</span>
+                </div>
+              </div>
             </div>
           </div>
+        )}
+
+        {/* Feature 2: When and why to charge more callout */}
+        {onOpenPricingCalendar && !isNotAllowed && (
+          <div className="p-4 bg-gradient-to-r from-emerald-950/20 via-[#121824] to-[#121824] rounded-2xl border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center shrink-0">
+                <Calendar className="w-4 h-4 text-amber-400" />
+              </div>
+              <span className="text-slate-300">
+                Want to charge more? Explore <strong className="text-white">D.C. Cherry Blossom, Graduation & Marathon surge dates</strong>
+                {!config.isHomeDuringStay ? ' and optimize your Best 90 Nights.' : '.'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={onOpenPricingCalendar}
+              className="px-4 py-2 rounded-full bg-[#00C805]/15 hover:bg-[#00C805]/25 text-[#00C805] font-bold text-xs border border-[#00C805]/40 transition-colors whitespace-nowrap self-end sm:self-auto cursor-pointer"
+            >
+              <span>View Pricing Calendar →</span>
+            </button>
+          </div>
+        )}
+
+        {/* Action Buttons: Back and Continue */}
+        <div className="pt-4 flex items-center justify-between border-t border-slate-800">
           <button
             type="button"
-            onClick={onOpenLongTermWorkflow}
-            className="w-full sm:w-auto px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs rounded-full transition-all shadow-md flex items-center justify-center gap-1.5 shrink-0"
+            onClick={onBackToPrevious}
+            className="px-5 py-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <span>Open Long-Term Rental Plan</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenReport}
+            className="px-7 py-3 rounded-full bg-[#00C805] hover:bg-[#00B004] text-black font-extrabold text-sm transition-all flex items-center gap-2 shadow-lg shadow-[#00C805]/20 cursor-pointer"
+          >
+            <span>Continue</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-      )}
-
-      {/* QUICK AIRBNB TOOLS: COMPS & LAUNCH STUDIO */}
-      {!isRedLight && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {onNavigateToComps && (
-            <button
-              type="button"
-              onClick={onNavigateToComps}
-              className="p-4 bg-[#121824] hover:bg-slate-800/80 border border-slate-700/80 hover:border-slate-600 rounded-2xl text-left transition-all group flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
-                  <Search className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
-                    Explore Airbnb Comps Nearby
-                  </h4>
-                  <p className="text-[11px] text-slate-400">
-                    See photos, rates & ratings of local listings
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
-            </button>
-          )}
-
-          {onNavigateToLaunch && (
-            <button
-              type="button"
-              onClick={onNavigateToLaunch}
-              className="p-4 bg-[#121824] hover:bg-slate-800/80 border border-slate-700/80 hover:border-slate-600 rounded-2xl text-left transition-all group flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#00C805]/10 text-[#00C805] flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white group-hover:text-[#00C805] transition-colors">
-                    Start on Airbnb & Copy Listing Copy
-                  </h4>
-                  <p className="text-[11px] text-slate-400">
-                    Host onboarding, D.C. license guide & API info
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* ACTION BUTTONS (MOM-FRIENDLY & CLEAN) */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onOpenReport}
-          className="w-full sm:flex-1 py-4 bg-[#00C805] hover:bg-[#00b004] text-black font-extrabold text-sm rounded-full transition-all shadow-xl flex items-center justify-center gap-2"
-        >
-          <FileText className="w-4 h-4" />
-          <span>Continue to Step 4: Statutory Report</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
-
-        <button
-          type="button"
-          onClick={onOpenTweakModal}
-          className="w-full sm:w-auto px-6 py-4 bg-[#121824] hover:bg-slate-800 text-white font-semibold text-xs rounded-full border border-slate-800 transition-colors flex items-center justify-center gap-2"
-        >
-          <Sliders className="w-4 h-4 text-slate-400" />
-          <span>Adjust Numbers</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onRestart}
-          className="w-full sm:w-auto px-5 py-4 bg-transparent hover:bg-white/5 text-slate-400 hover:text-white font-semibold text-xs rounded-full transition-colors flex items-center justify-center gap-1.5"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Start Over</span>
-        </button>
       </div>
     </div>
   );

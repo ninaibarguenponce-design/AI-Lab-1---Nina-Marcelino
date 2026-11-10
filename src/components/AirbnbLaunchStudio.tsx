@@ -34,6 +34,7 @@ interface AirbnbLaunchStudioProps {
   onBackToEvaluator?: () => void;
   onBackToReport?: () => void;
   onStartAgain?: () => void;
+  onOpenPricingCalendar?: () => void;
 }
 
 export const AirbnbLaunchStudio: React.FC<AirbnbLaunchStudioProps> = ({
@@ -46,6 +47,7 @@ export const AirbnbLaunchStudio: React.FC<AirbnbLaunchStudioProps> = ({
   onBackToEvaluator,
   onBackToReport,
   onStartAgain,
+  onOpenPricingCalendar,
 }) => {
   const [activeTab, setActiveTab] = useState<'onboarding' | 'api_integrations'>('onboarding');
   const [copiedTitle, setCopiedTitle] = useState(false);
@@ -130,19 +132,19 @@ Fully registered with the D.C. Department of Licensing and Consumer Protection u
               <button
                 type="button"
                 onClick={onBackToReport}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00C805]/15 hover:bg-[#00C805]/25 text-[#00C805] text-xs font-bold transition-all border border-[#00C805]/30 shadow-xs"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00C805]/15 hover:bg-[#00C805]/25 text-[#00C805] text-xs font-bold transition-all border border-[#00C805]/30 shadow-xs cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4 text-[#00C805]" />
-                <span>← Back to Step 4: Decision Report</span>
+                <span>Back to report</span>
               </button>
             )}
             {onBackToEvaluator && (
               <button
                 type="button"
                 onClick={onBackToEvaluator}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 shadow-xs"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 shadow-xs cursor-pointer"
               >
-                <span>← Back to Step 3: Verdict</span>
+                <span>Back to your answer</span>
               </button>
             )}
           </div>
@@ -162,28 +164,41 @@ Fully registered with the D.C. Department of Licensing and Consumer Protection u
             </p>
           </div>
 
-          {/* Sub-tab toggle */}
-          <div className="flex items-center bg-[#0B0E14] p-1 rounded-full border border-slate-800 self-start sm:self-auto text-xs font-semibold">
-            <button
-              onClick={() => setActiveTab('onboarding')}
-              className={`px-4 py-1.5 rounded-full transition-all ${
-                activeTab === 'onboarding'
-                  ? 'bg-white text-black font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Host Onboarding Guide
-            </button>
-            <button
-              onClick={() => setActiveTab('api_integrations')}
-              className={`px-4 py-1.5 rounded-full transition-all ${
-                activeTab === 'api_integrations'
-                  ? 'bg-white text-black font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Airbnb API Architecture
-            </button>
+          {/* Sub-tab toggle and Pricing Calendar link */}
+          <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+            {onOpenPricingCalendar && (
+              <button
+                type="button"
+                onClick={onOpenPricingCalendar}
+                className="px-3.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                <span>When to Charge More</span>
+              </button>
+            )}
+
+            <div className="flex items-center bg-[#0B0E14] p-1 rounded-full border border-slate-800 text-xs font-semibold">
+              <button
+                onClick={() => setActiveTab('onboarding')}
+                className={`px-4 py-1.5 rounded-full transition-all ${
+                  activeTab === 'onboarding'
+                    ? 'bg-white text-black font-bold shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Host Onboarding Guide
+              </button>
+              <button
+                onClick={() => setActiveTab('api_integrations')}
+                className={`px-4 py-1.5 rounded-full transition-all ${
+                  activeTab === 'api_integrations'
+                    ? 'bg-white text-black font-bold shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Airbnb API Architecture
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -255,9 +270,9 @@ Fully registered with the D.C. Department of Licensing and Consumer Protection u
                 </p>
               </div>
               <div className="p-3.5 bg-[#0B0E14] rounded-xl border border-slate-800 space-y-1">
-                <span className="text-slate-400 font-semibold block">D.C. Tax Exemption:</span>
+                <span className="text-slate-400 font-semibold block">D.C. Lodging Tax:</span>
                 <p className="text-slate-200">
-                  Airbnb automatically collects and remits the 14.95% D.C. lodging tax for you!
+                  Airbnb automatically collects and remits the 15.95% D.C. lodging tax for you!
                 </p>
               </div>
             </div>
@@ -510,7 +525,7 @@ Fully registered with the D.C. Department of Licensing and Consumer Protection u
         <div className="space-y-1 text-center sm:text-left">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00C805]/10 text-[#00C805] text-xs font-bold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Flow Completed · Step 5 of 5</span>
+            <span>Next Steps Completed</span>
           </div>
           <h3 className="text-lg font-black text-white mt-1">
             Evaluate Another D.C. Property?
@@ -525,19 +540,19 @@ Fully registered with the D.C. Department of Licensing and Consumer Protection u
             <button
               type="button"
               onClick={onBackToReport}
-              className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-full border border-slate-700 transition-colors"
+              className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-full border border-slate-700 transition-colors cursor-pointer"
             >
-              ← Back to Report
+              Back to report
             </button>
           )}
           {onStartAgain && (
             <button
               type="button"
               onClick={onStartAgain}
-              className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-[#00C805] hover:from-emerald-400 hover:to-[#00b004] text-black font-black text-xs sm:text-sm rounded-full transition-all shadow-xl hover:shadow-[#00C805]/20 flex items-center justify-center gap-2 transform active:scale-98"
+              className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-[#00C805] hover:from-emerald-400 hover:to-[#00b004] text-black font-black text-xs sm:text-sm rounded-full transition-all shadow-xl hover:shadow-[#00C805]/20 flex items-center justify-center gap-2 transform active:scale-98 cursor-pointer"
             >
               <RotateCcw className="w-4 h-4 stroke-3" />
-              <span>Start Again (Clear All & Step 1)</span>
+              <span>Start over</span>
             </button>
           )}
         </div>

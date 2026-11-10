@@ -5,14 +5,17 @@ import {
   Check,
   Printer,
   Sparkles,
-  RefreshCw,
   ExternalLink,
-  ShieldCheck,
-  AlertCircle,
   ArrowLeft,
   ArrowRight
 } from 'lucide-react';
-import { ComplianceEvaluation, FinancialInputs, FinancialOutputs, NeighborhoodData, PropertyConfig } from '../types';
+import {
+  ComplianceEvaluation,
+  FinancialInputs,
+  FinancialOutputs,
+  NeighborhoodData,
+  PropertyConfig
+} from '../types';
 import { generateDeterministicReport } from '../utils/calculator';
 import { INSIDE_AIRBNB_DC_SUMMARY } from '../data/comparableListings';
 
@@ -23,7 +26,7 @@ interface ReportViewerProps {
   compliance: ComplianceEvaluation;
   neighborhood: NeighborhoodData;
   onBackToVerdict?: () => void;
-  onContinueToStep5?: () => void;
+  onContinueToNextSteps?: () => void;
 }
 
 export const ReportViewer: React.FC<ReportViewerProps> = ({
@@ -33,15 +36,13 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   compliance,
   neighborhood,
   onBackToVerdict,
-  onContinueToStep5,
+  onContinueToNextSteps,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiReport, setAiReport] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [showRawMarkdown, setShowRawMarkdown] = useState(false);
 
-  // Deterministic baseline report
   const deterministicReport = generateDeterministicReport(
     config,
     inputs,
@@ -95,374 +96,149 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   };
 
   return (
-    <div className="bg-[#121824] rounded-3xl border border-slate-700 shadow-2xl overflow-hidden max-w-4xl mx-auto">
+    <div className="bg-[#121824] rounded-3xl border border-slate-700 shadow-2xl overflow-hidden max-w-4xl mx-auto space-y-6">
       {/* Report Header Bar */}
       <div className="p-6 sm:p-8 border-b border-slate-700/80 bg-[#0B0E14] space-y-4">
-        {onBackToVerdict && (
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#00C805]/20 border border-[#00C805]/40 flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-[#00C805]" />
+            </div>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-[#00C805]">
+                Stage 3 · Full Report
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white">
+                D.C. Decision & Compliance Report
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onBackToVerdict}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all border border-slate-700 shadow-xs"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 text-[#00C805]" />
-              <span>← Back to Step 3: Verdict</span>
-            </button>
-          </div>
-        )}
-
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#00C805]">
-                Official Decision Output
-              </span>
-              <span className="text-xs text-slate-400 font-mono">
-                D.C. Law 22-307
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white mt-1 tracking-tight">
-              D.C. Short-Term Rental Viability & Compliance Report
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1">
-              Property: <strong className="text-white">{config.nickname || 'Subject Property'}</strong> · {neighborhood.name} ({neighborhood.ward}) · {config.bedrooms === 0 ? 'Studio' : `${config.bedrooms} Bed`}, {config.bathrooms} Bath
-            </p>
-          </div>
-
-          {/* Action Buttons: Clean & non-overflowing */}
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
-            <button
-              onClick={() => setShowRawMarkdown(!showRawMarkdown)}
-              className="px-3.5 py-2 text-xs font-semibold text-slate-200 bg-[#121824] border border-slate-700 rounded-full hover:bg-slate-800 transition-colors"
-            >
-              {showRawMarkdown ? 'Formatted View' : 'Raw Text'}
-            </button>
-
-            <button
               onClick={handleCopy}
-              className="px-3.5 py-2 text-xs font-semibold text-slate-200 bg-[#121824] border border-slate-700 rounded-full hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-xs"
+              className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-slate-500 text-xs font-bold text-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-[#00C805]" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Copied' : 'Copy'}</span>
             </button>
 
             <button
+              type="button"
               onClick={handlePrint}
-              className="px-3.5 py-2 text-xs font-semibold text-slate-200 bg-[#121824] border border-slate-700 rounded-full hover:bg-slate-800 transition-colors flex items-center gap-1.5 shadow-xs"
+              className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-slate-500 text-xs font-bold text-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print</span>
             </button>
 
             <button
-              onClick={handleEnrichWithAI}
+              type="button"
               disabled={isAiLoading}
-              className="px-4 py-2 text-xs font-bold text-black bg-[#00C805] hover:bg-[#00b004] rounded-full transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+              onClick={handleEnrichWithAI}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-[#00C805] hover:from-emerald-500 hover:to-[#00D805] text-xs font-black text-black transition-all flex items-center gap-1.5 shadow-md shadow-[#00C805]/20 cursor-pointer disabled:opacity-50"
             >
-              {isAiLoading ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="w-3.5 h-3.5 text-black" />
-              )}
-              <span>{isAiLoading ? 'Analyzing...' : aiReport ? 'Re-enrich' : 'Enrich with AI'}</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isAiLoading ? 'Analyzing...' : 'Enrich with AI'}</span>
             </button>
           </div>
         </div>
-      </div>
 
-      {aiError && (
-        <div className="p-4 bg-amber-950/60 border-b border-amber-800/80 text-xs sm:text-sm text-amber-200 flex items-center gap-2.5">
-          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-          <span>{aiError}</span>
-        </div>
-      )}
-
-      {aiReport && (
-        <div className="p-3 bg-[#00C805]/15 border-b border-[#00C805]/30 text-xs sm:text-sm text-[#00C805] flex items-center justify-between px-6 font-semibold">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#00C805] shrink-0" />
-            <span>Report enriched with Gemini Flash legal & hyper-local D.C. insights.</span>
+        {aiError && (
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200">
+            {aiError}
           </div>
-          <button
-            onClick={() => setAiReport(null)}
-            className="text-xs text-slate-300 underline hover:text-white ml-2"
-          >
-            Revert to Statutory Baseline
-          </button>
-        </div>
-      )}
-
-      {/* Inside Airbnb Reference Banner */}
-      <div className="px-6 py-2.5 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-          <span>
-            Market benchmarks cross-referenced with <strong className="text-white">Inside Airbnb Washington, D.C.</strong> ({INSIDE_AIRBNB_DC_SUMMARY.totalListingsScraped.toLocaleString()} listings)
-          </span>
-        </div>
-        <a
-          href={INSIDE_AIRBNB_DC_SUMMARY.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300 underline font-semibold flex items-center gap-1"
-        >
-          <span>insideairbnb.com/washington-dc</span>
-          <ExternalLink className="w-3 h-3" />
-        </a>
-      </div>
-
-      {/* Report Content Body - High Contrast & Effortless Legibility */}
-      <div className="p-6 sm:p-10 bg-[#0E131D]">
-        {showRawMarkdown ? (
-          <div className="font-mono text-xs sm:text-sm bg-[#0B0E14] text-slate-100 p-6 rounded-2xl overflow-x-auto whitespace-pre-wrap leading-relaxed border border-slate-700">
-            {activeReport}
-          </div>
-        ) : (
-          <article className="max-w-none text-slate-100">
-            <MarkdownRenderer content={activeReport} />
-          </article>
         )}
       </div>
 
-      {/* STEP 4 TO STEP 5 CONTINUE CALLOUT BANNER */}
-      <div className="p-6 sm:p-8 bg-gradient-to-r from-[#0B0E14] via-[#121A28] to-[#0B0E14] border-t border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="space-y-1 text-center md:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00C805]/10 border border-[#00C805]/30">
-            <span className="w-2 h-2 rounded-full bg-[#00C805] animate-ping"></span>
-            <span className="text-xs font-bold uppercase tracking-wider text-[#00C805]">
-              Step 4 Completed ✓
-            </span>
-          </div>
-          <h3 className="text-lg font-black text-white mt-1">
-            {compliance.status === 'RED'
-              ? 'Ready for Step 5: Long-Term Leasing Plan?'
-              : 'Ready for Step 5: Launch on Airbnb?'}
-          </h3>
-          <p className="text-xs text-slate-300 max-w-xl">
-            {compliance.status === 'RED'
-              ? 'Since this property does not qualify for D.C. short-term rental licenses, proceed to Step 5 to configure a guaranteed 12-month lease strategy.'
-              : 'Proceed to Step 5 for the host launch studio: generated listing title & description, DLCP license application steps, and Airbnb integration.'}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-center">
-          {onBackToVerdict && (
-            <button
-              type="button"
-              onClick={onBackToVerdict}
-              className="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-full border border-slate-700 transition-colors flex items-center gap-1.5"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>← Back to Step 3</span>
-            </button>
-          )}
-
-          {onContinueToStep5 && (
-            <button
-              type="button"
-              onClick={onContinueToStep5}
-              className="flex-1 md:flex-initial px-8 py-4 bg-[#00C805] hover:bg-[#00b004] text-black font-black text-sm rounded-full transition-all shadow-xl hover:shadow-[#00C805]/30 flex items-center justify-center gap-2 transform active:scale-98"
-            >
-              <span>
-                {compliance.status === 'RED'
-                  ? 'Continue to Step 5: Long-Term Plan'
-                  : 'Continue to Step 5: Launch Studio'}
-              </span>
-              <ArrowRight className="w-4 h-4 stroke-3" />
-            </button>
-          )}
+      {/* Main Formatted Markdown Content */}
+      <div className="p-6 sm:p-8 space-y-6 text-slate-200 leading-relaxed text-sm">
+        <div className="prose prose-invert max-w-none space-y-4">
+          {activeReport.split('\n\n').map((block, idx) => {
+            if (block.startsWith('# ')) {
+              return (
+                <h1 key={idx} className="text-2xl font-black text-white border-b border-slate-800 pb-3">
+                  {block.replace('# ', '')}
+                </h1>
+              );
+            }
+            if (block.startsWith('## ')) {
+              return (
+                <h2 key={idx} className="text-lg font-bold text-white text-[#00C805] pt-4">
+                  {block.replace('## ', '')}
+                </h2>
+              );
+            }
+            if (block.startsWith('### ')) {
+              return (
+                <h3 key={idx} className="text-base font-bold text-white pt-2">
+                  {block.replace('### ', '')}
+                </h3>
+              );
+            }
+            if (block.startsWith('> ')) {
+              return (
+                <div key={idx} className="p-4 rounded-xl bg-slate-900/80 border-l-4 border-[#00C805] text-slate-300">
+                  {block.replace('> ', '')}
+                </div>
+              );
+            }
+            if (block.startsWith('|')) {
+              // Simple markdown table parser
+              const rows = block.trim().split('\n');
+              return (
+                <div key={idx} className="overflow-x-auto my-4 rounded-xl border border-slate-800">
+                  <table className="w-full text-left text-xs font-mono">
+                    <tbody>
+                      {rows.map((row, rIdx) => {
+                        if (row.includes('---')) return null;
+                        const cols = row.split('|').filter((_, cIdx, arr) => cIdx > 0 && cIdx < arr.length - 1);
+                        const isHead = rIdx === 0;
+                        return (
+                          <tr key={rIdx} className={isHead ? 'bg-slate-900 border-b border-slate-800 font-bold text-white' : 'border-b border-slate-800/50 hover:bg-slate-900/40'}>
+                            {cols.map((col, cIdx) => (
+                              <td key={cIdx} className="p-3">
+                                {col.trim()}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            }
+            return (
+              <p key={idx} className="text-slate-300">
+                {block}
+              </p>
+            );
+          })}
         </div>
       </div>
 
-      {/* Footer Legal Disclaimer */}
-      <div className="p-5 bg-[#0B0E14] border-t border-slate-800 text-xs text-slate-400 leading-relaxed">
-        <p>
-          <strong className="text-slate-300">Statutory Notice:</strong> This report provides business decision guidance based on D.C. Law 22-307 (Short-Term Rental Regulation Act), D.C. Municipal Regulations Title 17, D.C. Office of Tax and Revenue policies, and Inside Airbnb Washington D.C. data (insideairbnb.com/washington-dc). Homeowners should verify final license approval with the D.C. Department of Licensing and Consumer Protection at dlcp.dc.gov.
-        </p>
+      {/* Navigation Buttons: Back and Continue */}
+      <div className="p-6 sm:p-8 border-t border-slate-800 bg-[#0B0E14] flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onBackToVerdict}
+          className="px-5 py-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onContinueToNextSteps}
+          className="px-7 py-3 rounded-full bg-[#00C805] hover:bg-[#00B004] text-black font-extrabold text-sm transition-all flex items-center gap-2 shadow-lg shadow-[#00C805]/20 cursor-pointer"
+        >
+          <span>Continue</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
 };
-
-// High-contrast, crystal-clear section renderer designed for maximum readability
-function MarkdownRenderer({ content }: { content: string }) {
-  const sections = content.split(/(?=###\s+\d\.)/g);
-
-  return (
-    <div className="space-y-8">
-      {sections.map((section, idx) => {
-        const lines = section.trim().split('\n');
-        const header = lines[0]?.replace(/^###\s+/, '');
-        const bodyLines = lines.slice(1);
-
-        // Detect tables
-        const tableLines: string[] = [];
-        const nonTableBlocks: Array<{ type: 'text' | 'table'; content: string[] }> = [];
-        let inTable = false;
-
-        for (const line of bodyLines) {
-          if (line.trim().startsWith('|')) {
-            inTable = true;
-            tableLines.push(line);
-          } else {
-            if (inTable) {
-              nonTableBlocks.push({ type: 'table', content: [...tableLines] });
-              tableLines.length = 0;
-              inTable = false;
-            }
-            if (line.trim()) {
-              if (nonTableBlocks.length > 0 && nonTableBlocks[nonTableBlocks.length - 1].type === 'text') {
-                nonTableBlocks[nonTableBlocks.length - 1].content.push(line);
-              } else {
-                nonTableBlocks.push({ type: 'text', content: [line] });
-              }
-            }
-          }
-        }
-        if (tableLines.length > 0) {
-          nonTableBlocks.push({ type: 'table', content: [...tableLines] });
-        }
-
-        return (
-          <section
-            key={idx}
-            className="bg-[#121824] border border-slate-700/80 rounded-2xl p-6 sm:p-8 space-y-5 shadow-lg"
-          >
-            {header && (
-              <h2 className="text-lg sm:text-xl font-black text-white border-b border-slate-700 pb-3 flex items-center gap-2">
-                {header}
-              </h2>
-            )}
-
-            {nonTableBlocks.map((block, bIdx) => {
-              if (block.type === 'table') {
-                return <SimpleTable key={bIdx} lines={block.content} />;
-              }
-
-              return (
-                <div key={bIdx} className="space-y-3 text-sm sm:text-base leading-relaxed text-slate-100">
-                  {block.content.map((line, lIdx) => {
-                    const trimmed = line.trim();
-                    if (trimmed.startsWith('- ')) {
-                      return (
-                        <div key={lIdx} className="flex items-start gap-2.5 pl-1">
-                          <span className="text-[#00C805] font-bold shrink-0 mt-0.5">•</span>
-                          <span
-                            className="text-slate-100"
-                            dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(trimmed.substring(2)) }}
-                          />
-                        </div>
-                      );
-                    }
-                    if (/^\d+\.\s+/.test(trimmed)) {
-                      const match = trimmed.match(/^(\d+)\.\s+(.*)/);
-                      return (
-                        <div key={lIdx} className="flex items-start gap-2.5 pl-1">
-                          <span className="w-5 h-5 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 border border-slate-700">
-                            {match?.[1]}
-                          </span>
-                          <span
-                            className="text-slate-100 flex-1"
-                            dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(match?.[2] || '') }}
-                          />
-                        </div>
-                      );
-                    }
-                    return (
-                      <p
-                        key={lIdx}
-                        className="text-slate-100 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(line) }}
-                      />
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </section>
-        );
-      })}
-    </div>
-  );
-}
-
-function SimpleTable({ lines }: { lines: string[] }) {
-  if (lines.length < 2) return null;
-
-  const headerCells = lines[0]
-    .split('|')
-    .map((c) => c.trim())
-    .filter(Boolean);
-
-  const dataRows = lines.slice(2).map((row) =>
-    row
-      .split('|')
-      .map((c) => c.trim())
-      .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1 || arr.length === 1)
-  );
-
-  return (
-    <div className="overflow-x-auto my-4 rounded-xl border border-slate-700 shadow-md">
-      <table className="min-w-full divide-y divide-slate-700 text-xs sm:text-sm">
-        <thead className="bg-[#0B0E14]">
-          <tr>
-            {headerCells.map((head, idx) => (
-              <th
-                key={idx}
-                className="px-4 py-3 text-left font-black text-white whitespace-nowrap"
-                dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(head) }}
-              />
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-700/80 bg-[#161D2B]">
-          {dataRows.map((row, rIdx) => (
-            <tr key={rIdx} className="hover:bg-slate-800/60 transition-colors">
-              {row.map((cell, cIdx) => {
-                const isDifferenceCol = cIdx === 3;
-                const isPositive = cell.includes('+');
-                const isNegative = cell.includes('-') && !cell.includes('--');
-                return (
-                  <td
-                    key={cIdx}
-                    className={`px-4 py-3.5 text-slate-100 ${
-                      cIdx === 0
-                        ? 'font-bold text-white font-sans'
-                        : isDifferenceCol
-                        ? isPositive
-                          ? 'font-mono font-bold text-[#00C805]'
-                          : isNegative
-                          ? 'font-mono font-bold text-red-400'
-                          : 'font-mono text-slate-300'
-                        : 'font-mono text-slate-200'
-                    }`}
-                    dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(cell) }}
-                  />
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function formatInlineMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em class="text-slate-300 italic">$1</em>')
-    .replace(/`([^`]+)`/g, '<code class="bg-slate-800 px-1.5 py-0.5 rounded text-xs text-emerald-300 font-mono border border-slate-700">$1</code>')
-    .replace(
-      /\[GREEN: Fully Compliant\]/g,
-      '<span class="inline-flex items-center gap-1 px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 font-black rounded-full text-xs shadow-xs">✓ GREEN: Fully Compliant</span>'
-    )
-    .replace(
-      /\[YELLOW: Compliant with Conditions\]/g,
-      '<span class="inline-flex items-center gap-1 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/50 font-black rounded-full text-xs shadow-xs">⚠️ YELLOW: Compliant with Conditions</span>'
-    )
-    .replace(
-      /\[RED: Non-Compliant \/ High Risk\]/g,
-      '<span class="inline-flex items-center gap-1 px-3 py-1 bg-red-500/20 text-red-300 border border-red-500/50 font-black rounded-full text-xs shadow-xs">✕ RED: Non-Compliant / High Risk</span>'
-    );
-}

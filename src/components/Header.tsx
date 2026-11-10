@@ -1,34 +1,35 @@
 import React from 'react';
 import {
   FileText,
-  Calculator,
-  Compass,
+  Building2,
   Scale,
   MessageSquare,
-  Building2,
-  Search,
-  Sparkles,
   Check,
-  ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  Home,
+  CheckCircle,
+  HelpCircle,
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 
 export type AppTab =
-  | 'evaluator'
-  | 'comps'
-  | 'launch'
+  | 'home'
+  | 'verdict'
   | 'report'
+  | 'next_steps'
+  | 'pricing_calendar'
+  | 'comps'
   | 'long_term_workflow'
-  | 'sensitivity'
   | 'compliance_guide'
   | 'consultation';
 
 interface HeaderProps {
   activeTab: AppTab;
   onSelectTab: (tab: AppTab) => void;
-  onGenerateReport: () => void;
-  intakeStep?: 1 | 2 | 3 | 4;
+  intakeStep?: 1 | 2 | 3;
   intakeCompleted?: boolean;
+  maxUnlockedStage?: number; // 1: Home, 2: Answer, 3: Report, 4: Next steps
   onBackToPreviousStep?: () => void;
   canGoBack?: boolean;
 }
@@ -36,72 +37,45 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onSelectTab,
-  onGenerateReport,
   intakeStep = 1,
   intakeCompleted = false,
+  maxUnlockedStage = 1,
   onBackToPreviousStep,
   canGoBack = false,
 }) => {
-  // Determine Delivery-App Stage (1 to 5)
-  // Stage 1: Property Setup (Intake)
-  // Stage 2: Market Comps
-  // Stage 3: Decision & Verdict
-  // Stage 4: 4-Part Report
-  // Stage 5: Next Steps (Launch or Long-Term Plan)
-  let currentStageNumber = 1;
-  if (activeTab === 'evaluator' && !intakeCompleted) currentStageNumber = 1;
-  else if (activeTab === 'comps') currentStageNumber = 2;
-  else if (activeTab === 'evaluator' && intakeCompleted) currentStageNumber = 3;
-  else if (activeTab === 'report') currentStageNumber = 4;
-  else if (activeTab === 'launch' || activeTab === 'long_term_workflow') currentStageNumber = 5;
+  // Map current tab to stage number (1 to 4)
+  let currentStage = 1;
+  if (activeTab === 'home') currentStage = 1;
+  else if (activeTab === 'verdict' || activeTab === 'comps') currentStage = 2;
+  else if (activeTab === 'report') currentStage = 3;
+  else if (activeTab === 'next_steps' || activeTab === 'pricing_calendar' || activeTab === 'long_term_workflow') currentStage = 4;
 
-  const deliverySteps = [
+  const highestUnlocked = Math.max(currentStage, maxUnlockedStage, intakeCompleted ? 2 : 1);
+
+  const stages = [
     {
       stage: 1,
-      id: 'evaluator',
-      label: '1. Setup',
-      sublabel: !intakeCompleted ? `Step ${intakeStep}/4` : 'Completed',
-      action: () => onSelectTab('evaluator'),
-      isCurrent: currentStageNumber === 1,
-      isCompleted: intakeCompleted || currentStageNumber > 1,
+      id: 'home' as AppTab,
+      label: 'Your home',
+      sublabel: !intakeCompleted ? `Step ${intakeStep} of 3` : 'Saved',
     },
     {
       stage: 2,
-      id: 'comps',
-      label: '2. Comps',
-      sublabel: 'Local Rates',
-      action: () => onSelectTab('comps'),
-      isCurrent: currentStageNumber === 2,
-      isCompleted: currentStageNumber > 2,
+      id: 'verdict' as AppTab,
+      label: 'Your answer',
+      sublabel: 'Comparison',
     },
     {
       stage: 3,
-      id: 'verdict',
-      label: '3. Verdict',
-      sublabel: 'Cash Comparison',
-      action: () => {
-        onSelectTab('evaluator');
-      },
-      isCurrent: currentStageNumber === 3,
-      isCompleted: currentStageNumber > 3,
+      id: 'report' as AppTab,
+      label: 'Full report',
+      sublabel: 'D.C. breakdown',
     },
     {
       stage: 4,
-      id: 'report',
-      label: '4. Report',
-      sublabel: 'D.C. Statutory',
-      action: () => onSelectTab('report'),
-      isCurrent: currentStageNumber === 4,
-      isCompleted: currentStageNumber > 4,
-    },
-    {
-      stage: 5,
-      id: 'launch',
-      label: '5. Launch',
-      sublabel: 'Next Steps',
-      action: () => onSelectTab('launch'),
-      isCurrent: currentStageNumber === 5,
-      isCompleted: false,
+      id: 'next_steps' as AppTab,
+      label: 'Next steps',
+      sublabel: 'Action plan',
     },
   ];
 
@@ -115,25 +89,22 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onBackToPreviousStep}
-                className="px-3 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-700"
-                title="Go back to previous step"
+                className="px-3 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-700 cursor-pointer"
+                title="Back to previous screen"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Go Back</span>
+                <span>Back</span>
               </button>
             )}
 
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                onSelectTab('evaluator');
-              }}
-              className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2 whitespace-nowrap"
+            <button
+              type="button"
+              onClick={() => onSelectTab(intakeCompleted ? 'verdict' : 'home')}
+              className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2 whitespace-nowrap text-left cursor-pointer"
             >
               <span className="w-2.5 h-2.5 rounded-full bg-[#00C805] animate-pulse"></span>
               <span>D.C. Rental Advisor</span>
-            </a>
+            </button>
             <span className="text-xs text-slate-400 hidden xl:inline">
               Airbnb vs. 12-Month Lease
             </span>
@@ -142,20 +113,20 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Quick auxiliary links */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onSelectTab('long_term_workflow')}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors whitespace-nowrap flex items-center gap-1.5 border ${
-                activeTab === 'long_term_workflow'
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 font-bold'
-                  : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
+              onClick={() => onSelectTab('pricing_calendar')}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors whitespace-nowrap hidden md:flex items-center gap-1.5 border cursor-pointer ${
+                activeTab === 'pricing_calendar'
+                  ? 'bg-[#00C805]/20 text-[#00C805] border-[#00C805]/40 font-bold'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
               }`}
             >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>12-Month Plan</span>
+              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              <span>Event Pricing</span>
             </button>
 
             <button
               onClick={() => onSelectTab('compliance_guide')}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors whitespace-nowrap hidden sm:flex items-center gap-1.5 border ${
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors whitespace-nowrap hidden sm:flex items-center gap-1.5 border cursor-pointer ${
                 activeTab === 'compliance_guide'
                   ? 'bg-[#00C805]/20 text-[#00C805] border-[#00C805]/40 font-bold'
                   : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
@@ -167,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => onSelectTab('consultation')}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors whitespace-nowrap hidden md:flex items-center gap-1.5 border ${
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors whitespace-nowrap flex items-center gap-1.5 border cursor-pointer ${
                 activeTab === 'consultation'
                   ? 'bg-[#00C805]/20 text-[#00C805] border-[#00C805]/40 font-bold'
                   : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
@@ -179,49 +150,61 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Row 2: Delivery-App Style Flow Stepper (The Progress Marker) */}
+        {/* Row 2: Four Progress Markers */}
         <div className="py-2.5 overflow-x-auto no-scrollbar">
-          <div className="flex items-center justify-between min-w-[560px] sm:min-w-0">
-            {deliverySteps.map((step, idx) => {
-              const isLast = idx === deliverySteps.length - 1;
+          <div className="flex items-center justify-between min-w-[500px] sm:min-w-0">
+            {stages.map((step, idx) => {
+              const isLast = idx === stages.length - 1;
+              const isCurrent = currentStage === step.stage;
+              const isUnlocked = step.stage <= highestUnlocked;
+              const isCompleted = step.stage < currentStage || (step.stage === 1 && intakeCompleted && currentStage !== 1);
 
               return (
                 <React.Fragment key={step.stage}>
                   <button
                     type="button"
-                    onClick={step.action}
+                    disabled={!isUnlocked}
+                    onClick={() => {
+                      if (isUnlocked) {
+                        onSelectTab(step.id);
+                      }
+                    }}
                     className={`flex items-center gap-2 p-1.5 rounded-xl transition-all text-left group ${
-                      step.isCurrent
-                        ? 'bg-[#00C805]/10 ring-1 ring-[#00C805]/50'
-                        : 'hover:bg-slate-800/40'
+                      !isUnlocked
+                        ? 'opacity-40 cursor-not-allowed'
+                        : isCurrent
+                        ? 'bg-[#00C805]/10 ring-1 ring-[#00C805]/50 cursor-pointer'
+                        : 'hover:bg-slate-800/40 cursor-pointer'
                     }`}
                   >
-                    {/* Numbered / Checkmark Circle */}
+                    {/* Circle badge */}
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
-                        step.isCurrent
+                        isCurrent
                           ? 'bg-[#00C805] text-black ring-4 ring-[#00C805]/20'
-                          : step.isCompleted
+                          : isCompleted
                           ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                          : 'bg-slate-800 text-slate-400 border border-slate-700'
+                          : isUnlocked
+                          ? 'bg-slate-800 text-slate-200 border border-slate-700'
+                          : 'bg-slate-900 text-slate-400 border border-slate-800'
                       }`}
                     >
-                      {step.isCompleted && !step.isCurrent ? (
+                      {isCompleted && !isCurrent ? (
                         <Check className="w-3.5 h-3.5 stroke-3 text-emerald-400" />
                       ) : (
                         step.stage
                       )}
                     </div>
 
-                    {/* Step Label & Subtitle */}
+                    {/* Step Label */}
                     <div className="leading-tight">
                       <div
                         className={`text-xs font-extrabold whitespace-nowrap transition-colors ${
-                          step.isCurrent
+                          isCurrent
                             ? 'text-white'
-                            : step.isCompleted
-                            ? 'text-slate-200'
-                            : 'text-slate-400 group-hover:text-slate-300'
+                            : isUnlocked
+                            ? 'text-slate-200 group-hover:text-white'
+                            : 'text-slate-400'
                         }`}
                       >
                         {step.label}
@@ -232,11 +215,11 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                   </button>
 
-                  {/* Connecting Line Between Stages */}
+                  {/* Connecting Bar */}
                   {!isLast && (
                     <div
                       className={`flex-1 h-0.5 mx-2 rounded-full transition-colors hidden sm:block ${
-                        step.isCompleted ? 'bg-emerald-500/40' : 'bg-slate-800'
+                        step.stage < highestUnlocked ? 'bg-emerald-500/40' : 'bg-slate-800'
                       }`}
                     />
                   )}

@@ -85,23 +85,23 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
               <button
                 type="button"
                 onClick={onBackToReport}
-                className="px-3.5 py-1.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-xs font-bold transition-all border border-emerald-500/30 flex items-center gap-1.5"
+                className="px-3.5 py-1.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-xs font-bold transition-all border border-emerald-500/30 flex items-center gap-1.5 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>← Back to Step 4: Decision Report</span>
+                <span>Back to report</span>
               </button>
             )}
             <button
               onClick={onBackToEvaluator}
-              className="px-3.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <span>← Back to Evaluator</span>
+              <span>Back to your answer</span>
             </button>
           </div>
 
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider self-start sm:self-auto">
             <Building2 className="w-3.5 h-3.5" />
-            <span>Step 5: D.C. Long-Term Leasing</span>
+            <span>Next Steps: D.C. Long-Term Leasing</span>
           </div>
         </div>
 
@@ -316,7 +316,7 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
       <div className="bg-[#121824] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-[#00C805]">
-            Simple Checklist for Mom
+            D.C. Landlord Action Checklist
           </span>
           <h2 className="text-xl sm:text-2xl font-bold text-white mt-1">
             How to Safely Rent Your House in D.C. (Step-by-Step)
@@ -467,7 +467,7 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
             </div>
           </div>
 
-          {/* Step 5: Tenant Opportunity to Purchase Act (TOPA) */}
+          {/* Tenant Opportunity to Purchase Act (TOPA) */}
           <div
             onClick={() => toggleStep('step5')}
             className={`p-5 rounded-2xl border transition-all cursor-pointer ${
@@ -489,7 +489,7 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
               <div className="space-y-1 flex-1">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-bold text-white">
-                    Step 5: Understanding Tenant Purchase Rights (TOPA)
+                    Tenant Purchase Rights (TOPA)
                   </h3>
                   <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
                     Future Home Sale
@@ -518,9 +518,9 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
             <button
               type="button"
               onClick={onBackToReport}
-              className="w-full sm:w-auto px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-full border border-slate-700 transition-colors"
+              className="w-full sm:w-auto px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-full border border-slate-700 transition-colors cursor-pointer"
             >
-              ← Back to Report
+              Back to report
             </button>
           )}
 
@@ -528,20 +528,20 @@ export const LongTermRentalWorkflow: React.FC<LongTermRentalWorkflowProps> = ({
             <button
               type="button"
               onClick={onStartAgain}
-              className="w-full sm:w-auto px-6 py-3.5 bg-slate-850 hover:bg-red-950/40 text-slate-200 hover:text-red-300 border border-slate-700 hover:border-red-500/50 font-bold text-xs rounded-full transition-all flex items-center justify-center gap-2 shadow-sm"
+              className="w-full sm:w-auto px-6 py-3.5 bg-slate-850 hover:bg-red-950/40 text-slate-200 hover:text-red-300 border border-slate-700 hover:border-red-500/50 font-bold text-xs rounded-full transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
               <RotateCcw className="w-4 h-4 text-slate-400" />
-              <span>Start Again (Clear Options & Step 1)</span>
+              <span>Start over</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={onBackToEvaluator}
-            className="w-full sm:flex-1 py-4 bg-[#00C805] hover:bg-[#00b004] text-black font-extrabold text-sm rounded-full transition-all shadow-lg flex items-center justify-center gap-2"
+            className="w-full sm:flex-1 py-4 bg-[#00C805] hover:bg-[#00b004] text-black font-extrabold text-sm rounded-full transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
           >
             <Home className="w-4 h-4" />
-            <span>Return to Evaluator</span>
+            <span>Back to your answer</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

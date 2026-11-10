@@ -2,91 +2,94 @@ import {
   ComplianceEvaluation,
   FinancialInputs,
   FinancialOutputs,
-  NeighborhoodData,
-  PropertyConfig
+  PropertyConfig,
+  Recommendation
 } from '../types';
+import {
+  DC_LODGING_TAX_PERCENT,
+  VACATION_RENTAL_NIGHT_CAP,
+  MIN_LIABILITY_INSURANCE,
+  LICENSE_FEE,
+  LICENSE_TERM_YEARS,
+  DAYS_IN_MONTH,
+  SOURCES
+} from '../data/dcRules';
 
+/**
+ * Evaluates compliance strictly against D.C. law.
+ * Shows requirements as an actionable to-do list rather than assuming prior completion.
+ */
 export function evaluateCompliance(config: PropertyConfig): ComplianceEvaluation {
   const primaryBlockers: string[] = [];
   const mandatoryConditions: string[] = [];
   const citations: string[] = [
-    'D.C. Official Code § 30-201 (Short-Term Rental Regulation Act of 2018)',
-    'D.C. Municipal Regulations Title 17, Chapter 28 (Business Licensing & Consumer Protection)',
-    'D.C. Office of Tax and Revenue Transient Accommodations Bulletin'
+    'D.C. Official Code § 30-201 (Short-Term Rental Regulation Act)',
+    'D.C. Municipal Regulations Title 17, Chapter 28',
+    'D.C. Office of Tax and Revenue Notice 2023-01'
   ];
 
-  // 1. Primary Residence Rule (Strict D.C. Mandate)
+  // 1. Primary Residence Rule
   if (!config.isPrimaryResidence || config.propertyType === 'secondary_investment') {
     primaryBlockers.push(
-      'PRIMARY RESIDENCE RESTRICTION: D.C. law restricts short-term rentals strictly to the owner’s primary residence (where you reside at least 6 months / 183 days per year and claim the Homestead tax deduction). D.C. does not grant short-term rental licenses for secondary investment homes, non-owner occupied units, or corporate investor holdings.'
+      'D.C. law permits short-term rentals strictly in the home you occupy as your primary residence (at least 183 days per year). Secondary investment properties are not eligible for short-term rental licenses.'
     );
   }
 
-  // 2. Condo / Co-op HOA Bylaws
+  // 2. Condominium / HOA Bylaws
   if (config.propertyType === 'condo_coop' && !config.hoaBylawsPermitSTR) {
     primaryBlockers.push(
-      'CONDOMINIUM BYLAW RESTRICTION: The condominium or homeowner association bylaws prohibit rentals under 6 or 12 months. Operating without association approval triggers building fines and license revocation.'
+      'Your condo or HOA bylaws prohibit rentals under 12 months. Building rules must permit short-term hosting before applying.'
     );
   }
 
-  // 3. Clean Hands Certificate
-  if (!config.hasCleanHandsCertificate) {
+  // 3. To-Do Checklist for every host
+  mandatoryConditions.push(
+    `Obtain a 2-year D.C. Basic Business License ($${LICENSE_FEE} for ${LICENSE_TERM_YEARS} years)`
+  );
+  mandatoryConditions.push(
+    'Request a Clean Hands Certificate from MyTax.DC.gov confirming no delinquent city debt'
+  );
+  mandatoryConditions.push(
+    `Secure at least $${MIN_LIABILITY_INSURANCE.toLocaleString()} in liability insurance coverage`
+  );
+  mandatoryConditions.push(
+    'Install interconnected smoke alarms, carbon monoxide detectors on each level, and a fire extinguisher'
+  );
+
+  if (config.propertyType === 'english_basement' || config.propertyType === 'accessory_dwelling_unit') {
     mandatoryConditions.push(
-      'Clean Hands Certificate: Must obtain a Clean Hands Certificate from the D.C. Tax Office showing you do not owe more than $100 in overdue taxes or city tickets.'
+      'Confirm your basement or in-law suite has a valid Certificate of Occupancy with 7-foot ceilings and emergency egress'
     );
   }
 
-  // 4. Life Safety Systems
-  if (!config.hasSmokeAndCoDetectors || !config.hasFireExtinguisher) {
-    mandatoryConditions.push(
-      'Life Safety Equipment: Install interconnected smoke alarms in every sleeping room, carbon monoxide detectors on each occupied floor, and an approved, mounted fire extinguisher.'
-    );
-  }
-
-  // 5. English Basement / In-Law Suite Certificate of Occupancy
-  if (
-    (config.propertyType === 'english_basement' || config.propertyType === 'accessory_dwelling_unit') &&
-    !config.hasCertificateOfOccupancy
-  ) {
-    mandatoryConditions.push(
-      'Certificate of Occupancy: Self-contained English basements and in-law suites must possess a Certificate of Occupancy or Department of Buildings record confirming ceiling height (at least 7 feet) and dedicated emergency exit windows or doors.'
-    );
-  }
-
-  // 6. Insurance Requirement
-  if (!config.hasStrLiabilityInsurance) {
-    mandatoryConditions.push(
-      'Host Liability Insurance: D.C. requires proof of active liability insurance coverage of at least $500,000 for short-term rental hosting operations.'
-    );
-  }
-
-  // Determine License Endorsement Type
-  let dlcpLicenseType: ComplianceEvaluation['dlcpLicenseType'] = 'Short-Term Rental Endorsement';
+  // Determine license category:
+  // Home during stays = "Short-Term Rental" (no annual night limit)
+  // Away during stays = "Vacation Rental" (strict 90-night limit)
+  let licenseCategory: ComplianceEvaluation['licenseCategory'] = 'Short-Term Rental';
   if (primaryBlockers.length > 0) {
-    dlcpLicenseType = 'INELIGIBLE (Unlicensed / Illegal)';
-  } else if (config.hostingType === 'unhosted' || config.propertyType === 'english_basement' || config.propertyType === 'accessory_dwelling_unit') {
-    dlcpLicenseType = 'Vacation Rental Endorsement';
+    licenseCategory = 'Not Allowed';
+  } else if (!config.isHomeDuringStay) {
+    licenseCategory = 'Vacation Rental';
   } else {
-    dlcpLicenseType = 'Short-Term Rental Endorsement';
+    licenseCategory = 'Short-Term Rental';
   }
 
-  // Determine Overall Status
   let status: ComplianceEvaluation['status'] = 'GREEN';
-  let statusLabel = 'GREEN: Fully Compliant';
+  let statusLabel = 'Eligible to License';
   let complianceScore = 100;
 
   if (primaryBlockers.length > 0) {
     status = 'RED';
-    statusLabel = 'RED: Non-Compliant / High Risk';
-    complianceScore = 20;
-  } else if (mandatoryConditions.length > 0) {
+    statusLabel = 'Not Allowed under D.C. Law';
+    complianceScore = 0;
+  } else if (!config.isHomeDuringStay) {
     status = 'YELLOW';
-    statusLabel = 'YELLOW: Compliant with Conditions';
-    complianceScore = Math.max(40, 100 - mandatoryConditions.length * 15);
+    statusLabel = 'Allowed as Vacation Rental (90-Night Limit)';
+    complianceScore = 80;
   } else {
     status = 'GREEN';
-    statusLabel = 'GREEN: Fully Compliant';
-    complianceScore = 98;
+    statusLabel = 'Allowed as Short-Term Rental (No Night Limit)';
+    complianceScore = 100;
   }
 
   return {
@@ -95,275 +98,307 @@ export function evaluateCompliance(config: PropertyConfig): ComplianceEvaluation
     primaryBlockers,
     mandatoryConditions,
     complianceScore,
-    dlcpLicenseType,
+    licenseCategory,
+    dlcpLicenseType: licenseCategory,
     citations
   };
 }
 
+/**
+ * Single authoritative financial calculator.
+ * Computes booked nights as min(expected, dcAllowed).
+ * Outputs single `recommendation` consumed identically across every screen and report.
+ */
 export function calculateFinancials(
   inputs: FinancialInputs,
   config: PropertyConfig
 ): FinancialOutputs {
-  const DAYS_IN_MONTH = 30.4;
-  const occupancyDecimal = Math.max(0, Math.min(100, inputs.occupancyRate)) / 100;
-  const bookedNightsPerMonth = DAYS_IN_MONTH * occupancyDecimal;
-  
-  // Gross STR Revenue (ADR * Nights)
-  const grossMonthlySTRRevenue = inputs.averageDailyRate * bookedNightsPerMonth;
-  
-  // Mandatory D.C. Transient Occupancy Tax (14.95%)
-  const dcTransientTaxAmount = grossMonthlySTRRevenue * (inputs.dcTransientTaxPercent / 100);
-  
-  // Platform Host Fee (3% standard)
-  const platformFeeAmount = grossMonthlySTRRevenue * (inputs.platformFeePercent / 100);
-  
-  // Stays & Turnovers
+  // 1. Determine D.C. Legal Cap based purely on whether owner is home during stays
+  const isSubjectTo90DayCap = !config.isHomeDuringStay;
+  const dcAllowedNightsPerYear = isSubjectTo90DayCap ? VACATION_RENTAL_NIGHT_CAP : 365;
+
+  // 2. Expected nights from user occupancy % or explicit input
+  const expectedNightsPerYear = Math.max(
+    0,
+    Math.round(inputs.expectedNightsBooked ?? (365 * (Math.max(0, Math.min(100, inputs.occupancyRate)) / 100)))
+  );
+
+  // 3. Booked nights is strictly the smaller of what the owner expects and what D.C. allows
+  const bookedNightsPerYear = Math.min(expectedNightsPerYear, dcAllowedNightsPerYear);
+  const bookedNightsPerMonth = bookedNightsPerYear / 12;
+  const is90NightCapLimiting = isSubjectTo90DayCap && expectedNightsPerYear > VACATION_RENTAL_NIGHT_CAP;
+
+  // 4. Gross Airbnb Revenue
+  const grossAnnualSTRRevenue = inputs.averageDailyRate * bookedNightsPerYear;
+  const grossMonthlySTRRevenue = grossAnnualSTRRevenue / 12;
+
+  // 5. Lodging Tax (15.95%) — Paid by guest on top of rate and remitted by Airbnb; NEVER subtracted from owner income
+  const lodgingTaxAnnual = grossAnnualSTRRevenue * (DC_LODGING_TAX_PERCENT / 100);
+  const lodgingTaxMonthly = lodgingTaxAnnual / 12;
+
+  // 6. Platform Host Fee (3% standard host fee deducted by Airbnb)
+  const platformFeeAnnual = grossAnnualSTRRevenue * (inputs.platformFeePercent / 100);
+  const platformFeeAmount = platformFeeAnnual / 12;
+
+  // 7. Cleaning & Turnovers
   const stayLength = Math.max(1, inputs.averageStayLength);
-  const estimatedStaysPerMonth = bookedNightsPerMonth / stayLength;
+  const estimatedStaysPerYear = bookedNightsPerYear > 0 ? Math.max(1, bookedNightsPerYear / stayLength) : 0;
+  const estimatedStaysPerMonth = estimatedStaysPerYear / 12;
   const totalCleaningCost = estimatedStaysPerMonth * inputs.turnoverCleaningCost;
   const totalCleaningFeeRecovered = estimatedStaysPerMonth * inputs.cleaningFeeChargedToGuest;
   const netTurnoverCost = Math.max(0, totalCleaningCost - totalCleaningFeeRecovered);
-  
-  // Fixed monthly expenses
+  const annualCleaningCost = netTurnoverCost * 12;
+
+  // 8. Fixed Expenses
   const fixedMonthlyExpenses =
     inputs.monthlyUtilities +
     inputs.monthlySuppliesAndWear +
     inputs.monthlyInsuranceAndLicense;
-  
-  const totalMonthlyExpenses = platformFeeAmount + netTurnoverCost + fixedMonthlyExpenses;
-  
-  // Net Monthly STR Profit
-  const netMonthlySTRProfit = grossMonthlySTRRevenue - totalMonthlyExpenses;
-  
-  // Annual Uncapped
-  const annualUncappedSTRProfit = netMonthlySTRProfit * 12;
-  
-  // 90-Day Vacation Rental Statutory Cap Check
-  // D.C. Vacation Rental Endorsement limits unhosted stays to 90 days per calendar year
-  const isSubjectTo90DayCap =
-    config.hostingType === 'unhosted' && !config.hasHardshipExemption;
-  
-  let annualCappedSTRProfit = annualUncappedSTRProfit;
-  if (isSubjectTo90DayCap) {
-    const maxNightsPerYear = 90;
-    const effectiveYearlyNights = Math.min(bookedNightsPerMonth * 12, maxNightsPerYear);
-    const yearlyGrossRevenue = effectiveYearlyNights * inputs.averageDailyRate;
-    const yearlyPlatformFee = yearlyGrossRevenue * (inputs.platformFeePercent / 100);
-    const yearlyStays = effectiveYearlyNights / stayLength;
-    const yearlyCleaningCost = yearlyStays * inputs.turnoverCleaningCost;
-    const yearlyCleaningRecovered = yearlyStays * inputs.cleaningFeeChargedToGuest;
-    const yearlyNetTurnover = Math.max(0, yearlyCleaningCost - yearlyCleaningRecovered);
-    const yearlyFixedExpenses = fixedMonthlyExpenses * 12;
-    
-    annualCappedSTRProfit = yearlyGrossRevenue - yearlyPlatformFee - yearlyNetTurnover - yearlyFixedExpenses;
-  }
-  
-  // Long-Term Lease Baseline
+  const annualFixedExpenses = fixedMonthlyExpenses * 12;
+
+  // Total deductions from host
+  const totalAnnualExpenses = platformFeeAnnual + annualCleaningCost + annualFixedExpenses;
+  const totalMonthlyExpenses = totalAnnualExpenses / 12;
+
+  // 9. Net Airbnb Profit
+  const airbnbNetAnnual = Math.round(grossAnnualSTRRevenue - totalAnnualExpenses);
+  const netMonthlySTRProfit = Math.round(airbnbNetAnnual / 12);
+
+  // 10. Long-Term Lease Alternative
   const longTermGrossMonthlyRent = inputs.longTermMonthlyRent;
-  const longTermManagementFee =
-    longTermGrossMonthlyRent * (inputs.longTermPropertyManagementPercent / 100);
-  const longTermVacancyAllowance =
-    longTermGrossMonthlyRent * (inputs.longTermVacancyPercent / 100);
+  const longTermManagementFee = longTermGrossMonthlyRent * (inputs.longTermPropertyManagementPercent / 100);
+  const longTermVacancyAllowance = longTermGrossMonthlyRent * (inputs.longTermVacancyPercent / 100);
   const longTermMaintenanceReserve = inputs.longTermMaintenanceReserve;
-  
-  const netMonthlyLongTermProfit =
-    longTermGrossMonthlyRent -
-    longTermManagementFee -
-    longTermVacancyAllowance -
-    longTermMaintenanceReserve;
-  
-  const annualLongTermProfit = netMonthlyLongTermProfit * 12;
-  
-  // Profit Deltas
-  const monthlyProfitDelta = netMonthlySTRProfit - netMonthlyLongTermProfit;
-  const annualProfitDelta =
-    (isSubjectTo90DayCap ? annualCappedSTRProfit : annualUncappedSTRProfit) - annualLongTermProfit;
-  
-  // Required Breakeven Occupancy Formula
-  // Net STR(N) = N * [ADR * (1 - platformFee%) - (netTurnoverPerStay / stayLength)] - fixedMonthlyExpenses
-  // Solve for N where Net STR(N) = netMonthlyLongTermProfit:
-  const netCleaningPerStay = Math.max(0, inputs.turnoverCleaningCost - inputs.cleaningFeeChargedToGuest);
-  const netCleaningPerNight = netCleaningPerStay / stayLength;
-  const netRevenuePerNight = inputs.averageDailyRate * (1 - inputs.platformFeePercent / 100) - netCleaningPerNight;
-  
-  let breakevenNightsNeeded = 0;
-  let breakevenOccupancyRate = 0;
-  let isBreakevenFeasible = true;
-  
-  if (netRevenuePerNight <= 0) {
-    isBreakevenFeasible = false;
-    breakevenOccupancyRate = 999;
-    breakevenNightsNeeded = 999;
+  const netMonthlyLongTermProfit = Math.round(
+    longTermGrossMonthlyRent - longTermManagementFee - longTermVacancyAllowance - longTermMaintenanceReserve
+  );
+  const longTermNetAnnual = netMonthlyLongTermProfit * 12;
+
+  // 11. Delta & Recommendation
+  const annualProfitDelta = airbnbNetAnnual - longTermNetAnnual;
+  const monthlyProfitDelta = Math.round(annualProfitDelta / 12);
+
+  // Near-tie definition: within 5% of the larger amount (or of long-term baseline)
+  const maxBenchmark = Math.max(1, Math.max(Math.abs(airbnbNetAnnual), Math.abs(longTermNetAnnual)));
+  const percentDifference = Math.abs(annualProfitDelta) / maxBenchmark;
+  const isNearTie = percentDifference <= 0.05;
+
+  let recommendation: Recommendation = 'long_term';
+  let verdictHeadline = '';
+  let verdictReason = '';
+
+  if (!config.isPrimaryResidence || config.propertyType === 'secondary_investment') {
+    recommendation = 'not_allowed';
+    verdictHeadline = 'Airbnb is not allowed under D.C. law.';
+    verdictReason =
+      'D.C. only licenses short-term rentals in your primary home. Keep a 12-month tenant or offer a 30+ day furnished rental.';
+  } else if (isNearTie) {
+    recommendation = 'airbnb';
+    verdictHeadline = "It's nearly a tie.";
+    const leadOption = airbnbNetAnnual >= longTermNetAnnual ? 'Airbnb edges ahead' : 'A 12-month tenant edges ahead';
+    verdictReason = `${leadOption} by $${Math.abs(annualProfitDelta).toLocaleString()} per year, so your decision comes down to personal flexibility versus guaranteed rent.`;
+  } else if (annualProfitDelta > 0) {
+    recommendation = 'airbnb';
+    verdictHeadline = 'List it on Airbnb.';
+    verdictReason = `Because you are home during guest stays, you can host year-round to earn an estimated $${annualProfitDelta.toLocaleString()} more per year than a 12-month lease.`;
   } else {
-    breakevenNightsNeeded = (netMonthlyLongTermProfit + fixedMonthlyExpenses) / netRevenuePerNight;
-    breakevenOccupancyRate = (breakevenNightsNeeded / DAYS_IN_MONTH) * 100;
-    
-    if (breakevenOccupancyRate > 100 || breakevenOccupancyRate < 0) {
-      isBreakevenFeasible = false;
+    recommendation = 'long_term';
+    verdictHeadline = 'Keep a 12-month tenant.';
+    if (is90NightCapLimiting) {
+      verdictReason = "D.C.'s 90-night vacation rental limit caps your earnings below what a 12-month tenant pays.";
+    } else {
+      verdictReason = `A 12-month tenant yields $${Math.abs(annualProfitDelta).toLocaleString()} more per year with lower turnover expenses and guaranteed monthly rent.`;
     }
   }
+
+  // 12. Hosted Upside Scenario
+  // If being away with the 90-night cap is why Airbnb loses, compute what the owner would earn if they were home
+  let hostedUpsideNetAnnual: number | undefined;
+  let hostedUpsideNights: number | undefined;
+  let hostedUpsideDelta: number | undefined;
+
+  if (isSubjectTo90DayCap && recommendation === 'long_term') {
+    const hostedNights = Math.min(expectedNightsPerYear, 365);
+    const hostedGross = inputs.averageDailyRate * hostedNights;
+    const hostedPlatformFee = hostedGross * (inputs.platformFeePercent / 100);
+    const hostedStays = hostedNights / stayLength;
+    const hostedCleaningNet = hostedStays * Math.max(0, inputs.turnoverCleaningCost - inputs.cleaningFeeChargedToGuest);
+    const hostedNetAnnual = Math.round(hostedGross - hostedPlatformFee - hostedCleaningNet - annualFixedExpenses);
+
+    hostedUpsideNetAnnual = hostedNetAnnual;
+    hostedUpsideNights = hostedNights;
+    hostedUpsideDelta = hostedNetAnnual - longTermNetAnnual;
+  }
+
+  // 13. Breakeven occupancy calculation
+  // Find occupancy % needed to match long-term net:
+  // netSTR = (ADR * nights) - (ADR * nights * 0.03) - ((nights/stayLength) * netClean) - fixedExpenses = longTermNetAnnual
+  // nights * (ADR * 0.97 - netClean/stayLength) = longTermNetAnnual + fixedExpenses
+  const netContributionPerNight = inputs.averageDailyRate * (1 - inputs.platformFeePercent / 100) -
+    Math.max(0, inputs.turnoverCleaningCost - inputs.cleaningFeeChargedToGuest) / stayLength;
   
-  // For unhosted vacation rentals, check if breakeven exceeds the 90-day annual cap (~24.7% occupancy)
-  const maxUnhostedMonthlyNights = 90 / 12; // 7.5 nights/month = 24.67% occupancy
-  const breakevenExceedsLegalCap =
-    isSubjectTo90DayCap && breakevenNightsNeeded > maxUnhostedMonthlyNights;
+  let breakevenNightsAnnual = 0;
+  if (netContributionPerNight > 0) {
+    breakevenNightsAnnual = Math.ceil((longTermNetAnnual + annualFixedExpenses) / netContributionPerNight);
+  }
+  const breakevenOccupancyRate = Math.min(100, Math.max(0, Math.round((breakevenNightsAnnual / 365) * 100)));
+  const breakevenNightsNeeded = Math.round(breakevenNightsAnnual / 12);
+  const breakevenExceedsLegalCap = isSubjectTo90DayCap && breakevenNightsAnnual > VACATION_RENTAL_NIGHT_CAP;
+  const isBreakevenFeasible = netContributionPerNight > 0 && breakevenNightsAnnual <= dcAllowedNightsPerYear;
 
   return {
+    recommendation,
+    verdictHeadline,
+    verdictReason,
+    isNearTie,
+    annualProfitDelta,
+    monthlyProfitDelta,
+
+    expectedNightsPerYear,
+    dcAllowedNightsPerYear,
+    bookedNightsPerYear,
     bookedNightsPerMonth,
+    isSubjectTo90DayCap,
+    is90NightCapLimiting,
+
+    grossAnnualSTRRevenue,
     grossMonthlySTRRevenue,
-    dcTransientTaxAmount,
+    lodgingTaxPercent: DC_LODGING_TAX_PERCENT,
+    lodgingTaxAnnual,
+    lodgingTaxMonthly,
     platformFeeAmount,
+    platformFeeAnnual,
     estimatedStaysPerMonth,
+    estimatedStaysPerYear,
     totalCleaningCost,
     totalCleaningFeeRecovered,
     netTurnoverCost,
+    annualCleaningCost,
     fixedMonthlyExpenses,
+    annualFixedExpenses,
     totalMonthlyExpenses,
     netMonthlySTRProfit,
-    annualUncappedSTRProfit,
-    annualCappedSTRProfit,
-    isSubjectTo90DayCap,
+    airbnbNetAnnual,
+
     longTermGrossMonthlyRent,
     longTermManagementFee,
     longTermVacancyAllowance,
     longTermMaintenanceReserve,
     netMonthlyLongTermProfit,
-    annualLongTermProfit,
-    monthlyProfitDelta,
-    annualProfitDelta,
-    breakevenOccupancyRate: Math.round(breakevenOccupancyRate * 10) / 10,
-    breakevenNightsNeeded: Math.round(breakevenNightsNeeded * 10) / 10,
+    longTermNetAnnual,
+    netAnnualLongTermProfit: longTermNetAnnual,
+    annualLongTermProfit: longTermNetAnnual,
+
+    // Aliases for tax and nights
+    dcTransientTaxAmount: lodgingTaxAnnual,
+    actualBookedNights: bookedNightsPerYear,
+    allowedNightCap: dcAllowedNightsPerYear,
+    annualOperatingCosts: totalAnnualExpenses,
+    netAnnualSTRProfit: airbnbNetAnnual,
+    annualUncappedSTRProfit: hostedUpsideNetAnnual ?? airbnbNetAnnual,
+    annualCappedSTRProfit: isSubjectTo90DayCap ? airbnbNetAnnual : Math.round(airbnbNetAnnual * (90 / Math.max(1, bookedNightsPerYear))),
+
+    hostedUpsideNetAnnual,
+    hostedUpsideNights,
+    hostedUpsideDelta,
+    hostedUpsideDifference: hostedUpsideDelta,
+    hostedUpsideAnnualNights: hostedUpsideNights,
+
+    breakevenOccupancyRate,
+    breakevenNightsNeeded,
     isBreakevenFeasible,
-    breakevenExceedsLegalCap
+    breakevenExceedsLegalCap,
   };
 }
 
+/**
+ * Generates an authoritative markdown report adhering to all D.C. statutory rules.
+ * The numbers and recommendation strictly match the verdict card.
+ */
 export function generateDeterministicReport(
   config: PropertyConfig,
   inputs: FinancialInputs,
   financials: FinancialOutputs,
   compliance: ComplianceEvaluation,
-  neighborhood: NeighborhoodData
+  neighborhood: { name: string; ward: string }
 ): string {
-  const currency = (val: number) =>
-    `$${Math.round(val).toLocaleString('en-US')}`;
+  const isSubjectTo90DayCap = !config.isHomeDuringStay;
 
-  const percent = (val: number) => `${val.toFixed(1)}%`;
+  let report = `# D.C. Rental Advisor: Decision & Compliance Report\n`;
+  report += `**Property:** ${config.nickname || 'Subject Property'} (${neighborhood.name}, ${neighborhood.ward})\n`;
+  report += `**Primary Residence:** ${config.isPrimaryResidence ? 'Yes (≥183 days/year)' : 'No (Secondary / Investment)'}\n`;
+  report += `**Hosting Presence:** ${config.isHomeDuringStay ? 'Owner on-site while guests stay (Short-Term Rental)' : 'Owner away while guests stay (Vacation Rental)'}\n`;
+  report += `**Legal Night Limit:** ${isSubjectTo90DayCap ? `Strictly capped at ${VACATION_RENTAL_NIGHT_CAP} nights per calendar year` : 'No annual night limit (year-round hosting allowed)'}\n\n`;
 
-  // Section 1: Regulatory Compliance & License Status
-  let section1 = `### 1. 🚦 Regulatory Compliance & License Status\n\n`;
-  section1 += `**Direct Status:** [${compliance.statusLabel}]\n\n`;
+  report += `---\n\n`;
 
-  if (compliance.status === 'RED') {
-    section1 += `**CRITICAL LEGAL BLOCKERS (D.C. Business Licensing Department Rules):**\n`;
-    for (const blocker of compliance.primaryBlockers) {
-      section1 += `- **Violation:** ${blocker}\n`;
-    }
-    section1 += `- **Statutory Penalty:** Operating an unlicensed short-term rental in Washington, D.C. carries city fines starting at $1,000 for the first offense, escalating up to $5,000 per violation, and platform removal under D.C. Law 22-307.\n`;
-  } else {
-    section1 += `**D.C. Licensing & Regulatory Profile:**\n`;
-    section1 += `- **Assigned License Classification:** **${compliance.dlcpLicenseType}** issued by the D.C. Business Licensing Department.\n`;
-    section1 += `- **Primary Residence Verification:** Verified as owner's primary home (meeting the mandatory 183-day annual residence requirement under D.C. Code § 30-201).\n`;
-    
-    if (config.hostingType === 'unhosted') {
-      section1 += `- **90-Day Annual Cap Restriction:** Because you are renting the whole home while away (unhosted Vacation Rental), D.C. law strictly limits bookings to a cumulative **90 days per calendar year** unless granted a temporary hardship relocation exemption by the city.\n`;
-    } else {
-      section1 += `- **Hosted Exemption (No 90-Day Cap):** Because you remain present in the house during guest stays, this property qualifies for a full Short-Term Rental endorsement with **zero 90-day booking cap** (you can rent all 365 days a year).\n`;
-    }
+  // SECTION 1: VERDICT & RECOMMENDATION
+  report += `## 1. 💡 Recommendation\n\n`;
+  report += `### **${financials.verdictHeadline}**\n\n`;
+  if (financials.recommendation !== 'not_allowed') {
+    report += `**Annual Difference:** ${financials.annualProfitDelta >= 0 ? '+' : '-'}$${Math.abs(Math.round(financials.annualProfitDelta)).toLocaleString()} per year\n\n`;
+  }
+  report += `${financials.verdictReason}\n\n`;
 
-    if (config.propertyType === 'english_basement' || config.propertyType === 'accessory_dwelling_unit') {
-      section1 += `- **English Basement / In-Law Suite Rules:** Rented under D.C. Vacation Rental provisions. Requires a verified Certificate of Occupancy, independent entrance, minimum 7-foot ceiling height, and accessible safety shutoffs.\n`;
-    }
-
-    if (compliance.mandatoryConditions.length > 0) {
-      section1 += `\n**Mandatory Steps Required Prior to Listing:**\n`;
-      for (const cond of compliance.mandatoryConditions) {
-        section1 += `- ${cond}\n`;
-      }
-    } else {
-      section1 += `- **Readiness:** All baseline safety hardware (smoke/carbon monoxide detectors, fire extinguisher) and Clean Hands tax certificates are satisfied.\n`;
-    }
+  if (financials.hostedUpsideNetAnnual !== undefined && isSubjectTo90DayCap) {
+    report += `> **On-Site Hosting Alternative:** If you live on-site during stays (e.g., residing upstairs while renting the basement unit), D.C. removes the 90-night cap. At ${financials.hostedUpsideNights} booked nights, you would earn approximately **$${financials.hostedUpsideNetAnnual.toLocaleString()}/year**.\n\n`;
   }
 
-  // Section 2: Financial Comparison
-  let section2 = `\n### 2. 📊 Financial Comparison: Airbnb vs. Long-Term Lease\n\n`;
-  section2 += `| Financial Metric | Short-Term Rental (Airbnb) | Long-Term Lease (12-Month Tenant) | Net Difference |\n`;
-  section2 += `| :--- | :--- | :--- | :--- |\n`;
-  section2 += `| **Projected Monthly Gross Revenue** | ${currency(financials.grossMonthlySTRRevenue)} (${percent(inputs.occupancyRate)} occupancy @ ${currency(inputs.averageDailyRate)} nightly price) | ${currency(financials.longTermGrossMonthlyRent)} (Contract Rent) | ${financials.grossMonthlySTRRevenue >= financials.longTermGrossMonthlyRent ? '+' : ''}${currency(financials.grossMonthlySTRRevenue - financials.longTermGrossMonthlyRent)} |\n`;
-  section2 += `| **Mandatory D.C. Hotel & Lodging Tax (-14.95%)** | -${currency(financials.dcTransientTaxAmount)} (Collected & remitted to D.C. Tax Office) | $0.00 (Zero tax for standard leases) | -${currency(financials.dcTransientTaxAmount)} |\n`;
-  section2 += `| **Platform & Host Service Fees (3.0%)** | -${currency(financials.platformFeeAmount)} | $0.00 | -${currency(financials.platformFeeAmount)} |\n`;
-  section2 += `| **Turnover & Cleaning Costs (Net)** | -${currency(financials.netTurnoverCost)} (${financials.estimatedStaysPerMonth.toFixed(1)} guest stays/month) | $0.00 (Tenant maintains home) | -${currency(financials.netTurnoverCost)} |\n`;
-  section2 += `| **Monthly Operating Overhead (Utilities, Wi-Fi, Ins.)** | -${currency(financials.fixedMonthlyExpenses)} (Paid by owner) | -${currency(financials.longTermManagementFee + financials.longTermVacancyAllowance + financials.longTermMaintenanceReserve)} (Vacancy buffer + maintenance reserve) | -${currency(financials.fixedMonthlyExpenses - (financials.longTermManagementFee + financials.longTermVacancyAllowance + financials.longTermMaintenanceReserve))} |\n`;
-  section2 += `| **Net Monthly Profit** | **${currency(financials.netMonthlySTRProfit)}** | **${currency(financials.netMonthlyLongTermProfit)}** | **${financials.monthlyProfitDelta >= 0 ? '+' : ''}${currency(financials.monthlyProfitDelta)}/month** |\n`;
-  section2 += `| **Annual Net Income** | **${currency(financials.annualUncappedSTRProfit)}** ${financials.isSubjectTo90DayCap ? `*(${currency(financials.annualCappedSTRProfit)} under D.C. 90-day cap)*` : ''} | **${currency(financials.annualLongTermProfit)}** | **${financials.annualProfitDelta >= 0 ? '+' : ''}${currency(financials.annualProfitDelta)}/year** |\n\n`;
+  report += `---\n\n`;
 
-  section2 += `**Breakeven Analysis:**\n`;
-  if (!financials.isBreakevenFeasible) {
-    section2 += `- **Required Breakeven Occupancy:** **UNACHIEVABLE AT CURRENT NIGHTLY PRICE**. Monthly operating costs exceed profit margins. You must raise your nightly price above ${currency(inputs.turnoverCleaningCost / inputs.averageStayLength + 50)} to break even.\n`;
-  } else {
-    section2 += `- **Required Breakeven Occupancy:** **${percent(financials.breakevenOccupancyRate)}** (${financials.breakevenNightsNeeded} nights booked per month) to match the guaranteed profit of a 12-month tenant (${currency(financials.netMonthlyLongTermProfit)}/month).\n`;
-    
-    if (financials.breakevenExceedsLegalCap) {
-      section2 += `- ⚠️ **ANNUAL 90-DAY CAP WARNING:** Because this unhosted home is capped by D.C. law at 90 nights a year (~24.7% maximum allowable annual occupancy), the required breakeven occupancy of ${percent(financials.breakevenOccupancyRate)} **cannot be legally maintained on a 12-month basis** without an official relocation hardship exemption from the city.\n`;
-    } else {
-      section2 += `- **Target Comparison:** Your selected occupancy rate of ${percent(inputs.occupancyRate)} is ${inputs.occupancyRate >= financials.breakevenOccupancyRate ? 'ABOVE' : 'BELOW'} your breakeven point by ${percent(Math.abs(inputs.occupancyRate - financials.breakevenOccupancyRate))}.\n`;
-    }
-  }
+  // SECTION 2: FINANCIAL COMPARISON
+  report += `## 2. 📊 Financial Comparison\n\n`;
+  report += `| Financial Metric | Airbnb (Short-Term) | 12-Month Lease Tenant |\n`;
+  report += `| :--- | :--- | :--- |\n`;
+  report += `| **Annual Booked Nights** | **${financials.bookedNightsPerYear} nights** (${Math.round(financials.bookedNightsPerMonth)} nights/mo) | Full 365 Days |\n`;
+  report += `| **Nightly Rate / Rent** | $${inputs.averageDailyRate} / night | $${inputs.longTermMonthlyRent.toLocaleString()} / month |\n`;
+  report += `| **Gross Annual Revenue** | $${Math.round(financials.grossAnnualSTRRevenue).toLocaleString()} | $${(inputs.longTermMonthlyRent * 12).toLocaleString()} |\n`;
+  report += `| **D.C. Lodging Tax (${DC_LODGING_TAX_PERCENT}%)** | $${Math.round(financials.lodgingTaxAnnual).toLocaleString()} *(Paid by guest)* | $0 (N/A) |\n`;
+  report += `| **Platform Host Fee (3%)** | -$${Math.round(financials.platformFeeAnnual).toLocaleString()} | $0 (N/A) |\n`;
+  report += `| **Turnover & Cleaning Costs** | -$${Math.round(financials.annualCleaningCost).toLocaleString()} | $0 (Tenant cleans) |\n`;
+  report += `| **Utilities & Operating Supplies** | -$${Math.round(financials.annualFixedExpenses).toLocaleString()} | $0 (Tenant pays utilities) |\n`;
+  report += `| **Vacancy & Maintenance Reserve** | Included above | -$${Math.round(financials.longTermVacancyAllowance * 12 + financials.longTermMaintenanceReserve * 12).toLocaleString()} |\n`;
+  report += `| **Annual Net Earnings (What You Keep)** | **$${financials.airbnbNetAnnual.toLocaleString()}** | **$${financials.longTermNetAnnual.toLocaleString()}** |\n`;
+  report += `| **Monthly Average** | **$${financials.netMonthlySTRProfit.toLocaleString()} / mo** | **$${financials.netMonthlyLongTermProfit.toLocaleString()} / mo** |\n\n`;
 
-  // Section 3: Neighborhood & Event Strategy
-  let section3 = `\n### 3. 📍 Neighborhood & Event Strategy: ${neighborhood.name} (${neighborhood.ward})\n\n`;
-  section3 += `**Local Market Positioning:** ${neighborhood.vibe}\n\n`;
-  section3 += `**Key Demand Drivers:**\n`;
-  for (const driver of neighborhood.demandDrivers) {
-    section3 += `- ${driver}\n`;
-  }
-  section3 += `\n**Seasonal Price Adjustments:**\n`;
-  for (const surge of neighborhood.seasonalSurges) {
-    section3 += `- **${surge.season}:** ${surge.factor} — *${surge.note}*\n`;
-  }
-  section3 += `\n**Neighborhood Tips for Higher Earnings:**\n`;
-  for (const tip of neighborhood.eventPricingTips) {
-    section3 += `- ${tip}\n`;
+  report += `*Note: In Washington, D.C., the ${DC_LODGING_TAX_PERCENT}% lodging tax is added to the guest's checkout invoice and remitted directly by Airbnb to the D.C. Office of Tax and Revenue. It is never deducted from host earnings.*\n\n`;
+
+  report += `---\n\n`;
+
+  // SECTION 3: D.C. LICENSING TO-DO LIST
+  report += `## 3. 🚦 D.C. Licensing & Compliance To-Do List\n\n`;
+  report += `Before listing on Airbnb, every D.C. homeowner must complete the following mandatory steps:\n\n`;
+  compliance.mandatoryConditions.forEach((item, index) => {
+    report += `${index + 1}. [ ] **${item}**\n`;
+  });
+  report += `\n`;
+
+  if (compliance.primaryBlockers.length > 0) {
+    report += `### ⚠️ Legal Disqualifications:\n`;
+    compliance.primaryBlockers.forEach((blocker) => {
+      report += `- **${blocker}**\n`;
+    });
+    report += `\n`;
   }
 
-  if (neighborhood.insideAirbnbMetrics) {
-    section3 += `\n**Inside Airbnb District Benchmarks (${neighborhood.ward}):**\n`;
-    section3 += `- **Ward Listing Volume:** ${neighborhood.insideAirbnbMetrics.wardListingsCount.toLocaleString()} listings (${neighborhood.insideAirbnbMetrics.entireHomePercent}% entire homes, ${neighborhood.insideAirbnbMetrics.privateRoomPercent}% private rooms)\n`;
-    section3 += `- **D.C. Licensed Compliance:** ${neighborhood.insideAirbnbMetrics.licensedPercent}% of listings display verified DLCP registration numbers\n`;
-    section3 += `- **Resident Host Ratio:** ${neighborhood.insideAirbnbMetrics.singleListingHostsPercent}% are single-listing primary residents\n`;
-    section3 += `- **Median Benchmark Rate:** $${neighborhood.insideAirbnbMetrics.medianPrice}/night (Citywide Average: $${neighborhood.insideAirbnbMetrics.averagePrice}/night; Source: [Inside Airbnb Washington, D.C.](${neighborhood.insideAirbnbMetrics.sourceUrl}))\n`;
-  }
+  report += `---\n\n`;
 
-  // Section 4: Strategic Recommendation & Action Plan
-  let section4 = `\n### 4. 💡 Strategic Recommendation & Action Plan\n\n`;
-  
-  if (compliance.status === 'RED') {
-    section4 += `**Bottom-Line Verdict:** **DO NOT PROCEED WITH AIRBNB LISTING.** Your property does not qualify as an owner-occupied primary home under D.C. law, which risks city fines of $1,000 to $5,000; you should safely lease to a 12-month residential tenant instead.\n\n`;
-    section4 += `**Next Steps:**\n`;
-    section4 += `1. **Execute 12-Month Lease:** Rent the home on the standard residential market to secure steady monthly income of approximately ${currency(financials.longTermGrossMonthlyRent)}/month.\n`;
-    section4 += `2. **Avoid Unlicensed Listings:** Do not attempt off-platform or unpermitted short-term rentals; D.C. automatically matches city tax records with platform booking data.\n`;
-    section4 += `3. **Explore 30-Day+ Furnished Rentals:** If you prefer flexibility, renting for 30 consecutive days or longer to traveling professionals is 100% legal without a short-term rental license.\n`;
-  } else if (financials.isSubjectTo90DayCap && financials.breakevenExceedsLegalCap) {
-    section4 += `**Bottom-Line Verdict:** **STICK WITH A LONG-TERM LEASE OR 30-DAY+ FURNISHED MODEL.** While legally eligible, D.C.'s 90-day unhosted booking cap limits your yearly Airbnb net profit to ${currency(financials.annualCappedSTRProfit)}, which is lower than the guaranteed ${currency(financials.annualLongTermProfit)} from a full-time tenant.\n\n`;
-    section4 += `**Recommended Action Steps:**\n`;
-    section4 += `1. **Consider 30-Day+ Mid-Term Rentals:** Stays of 30 days or longer are exempt from D.C.'s 90-day cap and short-term lodging tax, letting you host traveling medical staff, government fellows, or university researchers.\n`;
-    section4 += `2. **Apply for a Hardship Exemption:** If you are temporarily relocating due to an employer assignment or military deployment, you can request an extended 180-day unhosted allowance from the city.\n`;
-    section4 += `3. **Host-on-Premises Option:** If you live on the premises and only rent a bedroom suite, you can switch to a 'Hosted' license and remove the 90-day limit entirely.\n`;
-  } else if (financials.netMonthlySTRProfit > financials.netMonthlyLongTermProfit) {
-    section4 += `**Bottom-Line Verdict:** **PROCEED WITH AIRBNB LISTING.** Renting your home in ${neighborhood.name} generates approximately ${currency(financials.monthlyProfitDelta)}/month (${currency(financials.annualProfitDelta)}/year) more profit than a regular tenant, once you complete basic city licensing and home safety setup.\n\n`;
-    section4 += `**Step-by-Step Action Plan:**\n`;
-    section4 += `1. **Clean Hands Tax Certificate:** Request your free Clean Hands Certificate online at MyTax.DC.gov.\n`;
-    section4 += `2. **D.C. Business License:** Apply for your Basic Business License with a **${compliance.dlcpLicenseType}** endorsement ($283.80 biennial fee) through the D.C. Business Licensing Department.\n`;
-    section4 += `3. **Safety Equipment:** Place interconnected smoke detectors in every bedroom, carbon monoxide alarms on each level, and mount an approved fire extinguisher.\n`;
-    section4 += `4. **Host Liability Insurance:** Confirm that your homeowner policy or commercial hosting rider provides at least $500,000 in liability protection.\n`;
-    section4 += `5. **Seasonal Pricing:** Set rate increases during peak periods like ${neighborhood.seasonalSurges[0]?.season}.\n`;
-  } else {
-    section4 += `**Bottom-Line Verdict:** **CHOOSE A 12-MONTH RESIDENTIAL LEASE.** At your current estimated nightly price and cleaning costs, a regular yearly tenant delivers ${currency(Math.abs(financials.monthlyProfitDelta))}/month more profit with zero turnover work, no guest messaging, and tenant-paid utilities.\n\n`;
-    section4 += `**Recommended Next Steps:**\n`;
-    section4 += `1. **Market for a 1-Year Lease:** List the property at ${currency(financials.longTermGrossMonthlyRent)}/month for a dependable 12-month tenant.\n`;
-    section4 += `2. **Save on Utility Bills:** With a regular lease, the tenant pays electric, gas, and water bills instead of you covering them.\n`;
-    section4 += `3. **Re-evaluate If Prices Rise:** If nightly rates in ${neighborhood.name} increase above ${currency(inputs.averageDailyRate * 1.3)}/night, you can re-run this evaluator.\n`;
-  }
+  // SECTION 4: STATUTORY SOURCES
+  report += `## 4. 📚 Statutory Citations\n\n`;
+  report += `- **D.C. Department of Licensing and Consumer Protection:** [dlcp.dc.gov](${SOURCES.licensing})\n`;
+  report += `- **D.C. Office of Tax and Revenue (Notice 2023-01):** [otr.cfo.dc.gov](${SOURCES.tax})\n`;
+  report += `- **Inside Airbnb Washington, D.C. Open Data:** [insideairbnb.com](${SOURCES.data})\n`;
 
-  return section1 + section2 + section3 + section4;
+  return report;
 }
+
+export {
+  DC_LODGING_TAX_PERCENT,
+  VACATION_RENTAL_NIGHT_CAP,
+  MIN_LIABILITY_INSURANCE,
+  LICENSE_FEE,
+  LICENSE_TERM_YEARS,
+  DAYS_IN_MONTH,
+  SOURCES
+};
+

@@ -32,6 +32,7 @@ interface AirbnbCompsExplorerProps {
   onUpdateInputs: (updated: Partial<FinancialInputs>) => void;
   onNavigateToLaunch?: () => void;
   onBackToStep4?: () => void;
+  onBack?: () => void;
 }
 
 export const AirbnbCompsExplorer: React.FC<AirbnbCompsExplorerProps> = ({
@@ -41,7 +42,9 @@ export const AirbnbCompsExplorer: React.FC<AirbnbCompsExplorerProps> = ({
   onUpdateInputs,
   onNavigateToLaunch,
   onBackToStep4,
+  onBack,
 }) => {
+  const handleBack = onBack || onBackToStep4;
   const [selectedBedFilter, setSelectedBedFilter] = useState<number | 'all'>('all');
   const [onlySuperhost, setOnlySuperhost] = useState<boolean>(false);
   const [onlyParking, setOnlyParking] = useState<boolean>(false);
@@ -95,15 +98,15 @@ export const AirbnbCompsExplorer: React.FC<AirbnbCompsExplorerProps> = ({
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header Banner */}
       <div className="bg-[#121824] p-6 sm:p-8 rounded-3xl border border-slate-700 shadow-2xl relative overflow-hidden">
-        {onBackToStep4 && (
+        {handleBack && (
           <div className="mb-4">
             <button
               type="button"
-              onClick={onBackToStep4}
+              onClick={handleBack}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/90 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 shadow-sm group"
             >
               <ArrowLeft className="w-4 h-4 text-[#00C805] group-hover:-translate-x-0.5 transition-transform" />
-              <span>← Back to Step 4: Simple Financials</span>
+              <span>Back</span>
             </button>
           </div>
         )}
@@ -127,14 +130,14 @@ export const AirbnbCompsExplorer: React.FC<AirbnbCompsExplorerProps> = ({
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-            {onBackToStep4 && (
+            {handleBack && (
               <button
                 type="button"
-                onClick={onBackToStep4}
+                onClick={handleBack}
                 className="px-4 py-2.5 bg-[#00C805]/15 hover:bg-[#00C805]/25 text-[#00C805] border border-[#00C805]/40 font-bold text-xs rounded-full transition-colors flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Return to Step 4</span>
+                <span>Back</span>
               </button>
             )}
 
@@ -523,14 +526,14 @@ export const AirbnbCompsExplorer: React.FC<AirbnbCompsExplorerProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {onBackToStep4 && (
+          {handleBack && (
             <button
               type="button"
-              onClick={onBackToStep4}
-              className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-full transition-colors flex items-center justify-center gap-1.5 border border-slate-700"
+              onClick={handleBack}
+              className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-full transition-colors flex items-center justify-center gap-1.5 border border-slate-700 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Step 4</span>
+              <span>Back</span>
             </button>
           )}
 

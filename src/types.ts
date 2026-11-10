@@ -6,9 +6,9 @@ export type PropertyType =
   | 'condo_coop'
   | 'secondary_investment';
 
-export type HostingType =
-  | 'hosted' // Host is on premises (Short-Term Rental Endorsement, no 90-day cap)
-  | 'unhosted'; // Host is absent (Vacation Rental Endorsement, strict 90-day annual cap)
+export type HostingType = 'hosted' | 'unhosted';
+
+export type Recommendation = 'airbnb' | 'long_term' | 'not_allowed';
 
 export type ComplianceLevel = 'GREEN' | 'YELLOW' | 'RED';
 
@@ -16,72 +16,108 @@ export interface PropertyConfig {
   nickname: string;
   neighborhoodId: string;
   propertyType: PropertyType;
-  isPrimaryResidence: boolean; // Resides >= 183 days/yr
-  hostingType: HostingType;
+  isPrimaryResidence: boolean; // Lives in home >= 183 days/yr
+  isHomeDuringStay: boolean; // Will the owner be home while guests stay?
   bedrooms: number; // 0 for studio, 1, 2, 3, 4+
   bathrooms: number; // 1, 1.5, 2, 2.5, 3+
-  squareFeet?: number; // Optional square footage
-  amenities: string[]; // ['parking', 'pool', 'patio', 'washer_dryer', 'ac', 'wifi']
-  hasHardshipExemption: boolean; // Temporary relocation exemption
-  hasCleanHandsCertificate: boolean; // D.C. Tax Office status
-  hasSmokeAndCoDetectors: boolean; // Required on all levels & bedrooms
-  hasFireExtinguisher: boolean; // 2A:10B:C rated
-  hasCertificateOfOccupancy: boolean; // For Basement or Backyard apartment
-  hoaBylawsPermitSTR: boolean; // If condo/co-op
-  hasStrLiabilityInsurance: boolean; // Minimum $500,000 policy
+  squareFeet?: number;
+  amenities: string[];
+  hasHardshipExemption: boolean;
+  hasCleanHandsCertificate: boolean;
+  hasSmokeAndCoDetectors: boolean;
+  hasFireExtinguisher: boolean;
+  hasCertificateOfOccupancy: boolean;
+  hoaBylawsPermitSTR: boolean;
+  hasStrLiabilityInsurance: boolean;
+  hostingType?: HostingType;
 }
 
 export interface FinancialInputs {
-  averageDailyRate: number; // ADR ($/night)
-  occupancyRate: number; // Target/projected occupancy % (e.g. 68)
-  averageStayLength: number; // Average nights per stay (e.g. 3.2)
-  turnoverCleaningCost: number; // Paid to cleaners per stay (e.g. $150)
-  cleaningFeeChargedToGuest: number; // Charged on platform (e.g. $130)
-  platformFeePercent: number; // 3% standard host fee
-  dcTransientTaxPercent: number; // 14.95% DC Transient Occupancy Tax
-  monthlyUtilities: number; // Electric, gas, water, gigabit Wi-Fi ($)
-  monthlySuppliesAndWear: number; // Consumables, coffee, toiletries, linens ($)
-  monthlyInsuranceAndLicense: number; // $500k STR insurance rider + DLCP BBL fee amortization ($)
+  averageDailyRate: number; // Nightly price ($)
+  occupancyRate: number; // Expected occupancy % (0-100)
+  expectedNightsBooked?: number; // Optional direct expected nights/year
+  averageStayLength: number; // Nights per stay
+  turnoverCleaningCost: number; // Real cost paid per turnover
+  cleaningFeeChargedToGuest: number; // Fee collected from guest
+  platformFeePercent: number; // Airbnb host fee (typically 3%)
+  monthlyUtilities: number; // Electric, gas, water, internet
+  monthlySuppliesAndWear: number; // Coffee, linens, toiletries, wear
+  monthlyInsuranceAndLicense: number; // Insurance rider + license fee amortization
   
   // Long-Term Lease Baseline
-  longTermMonthlyRent: number; // Market 12-month lease rate ($)
-  longTermPropertyManagementPercent: number; // 0% if self-managed, 8-10% if managed
-  longTermVacancyPercent: number; // Typically 5% vacancy allowance
-  longTermMaintenanceReserve: number; // Typically $100-$150/mo
+  longTermMonthlyRent: number; // Market 12-month lease rent ($)
+  longTermPropertyManagementPercent: number; // 0% if self-managed
+  longTermVacancyPercent: number; // Vacancy allowance % (typically 5%)
+  longTermMaintenanceReserve: number; // Monthly maintenance allowance ($)
+  
+  // Legacy alias
+  dcTransientTaxPercent?: number;
 }
 
 export interface FinancialOutputs {
+  recommendation: Recommendation;
+  verdictHeadline: string; // "List it on Airbnb." | "Keep a 12-month tenant." | "It's nearly a tie." | "Airbnb is not allowed under D.C. law."
+  verdictReason: string;
+  isNearTie: boolean; // True if annual difference is <= 5%
+  annualProfitDelta: number; // Airbnb net - Long-term net
+  monthlyProfitDelta: number;
+  
+  // Nights & Caps
+  expectedNightsPerYear: number;
+  dcAllowedNightsPerYear: number; // 365 if home during stay, 90 if away
+  bookedNightsPerYear: number; // min(expectedNights, dcAllowedNights)
+  actualBookedNights?: number; // alias
+  allowedNightCap?: number; // alias
   bookedNightsPerMonth: number;
+  isSubjectTo90DayCap: boolean;
+  is90NightCapLimiting: boolean; // True if expected nights exceeded 90 while away
+  
+  // Airbnb Revenue & Deductions
+  grossAnnualSTRRevenue: number;
   grossMonthlySTRRevenue: number;
-  dcTransientTaxAmount: number;
+  lodgingTaxPercent: number; // 15.95%
+  lodgingTaxAnnual: number; // Paid by guest, collected by Airbnb (NOT deducted from owner)
+  lodgingTaxMonthly: number;
+  dcTransientTaxAmount: number; // alias for display
   platformFeeAmount: number;
+  platformFeeAnnual: number;
   estimatedStaysPerMonth: number;
+  estimatedStaysPerYear: number;
   totalCleaningCost: number;
   totalCleaningFeeRecovered: number;
   netTurnoverCost: number;
+  annualCleaningCost: number;
   fixedMonthlyExpenses: number;
+  annualFixedExpenses: number;
+  annualOperatingCosts?: number;
   totalMonthlyExpenses: number;
   netMonthlySTRProfit: number;
+  airbnbNetAnnual: number;
+  netAnnualSTRProfit?: number; // alias
+  annualUncappedSTRProfit?: number;
+  annualCappedSTRProfit?: number;
   
-  // Annual Projections
-  annualUncappedSTRProfit: number;
-  annualCappedSTRProfit: number; // Capped at 90 days for unhosted vacation rentals
-  isSubjectTo90DayCap: boolean;
-  
-  // Long-Term Lease
+  // Long-Term Lease Baseline
   longTermGrossMonthlyRent: number;
   longTermManagementFee: number;
   longTermVacancyAllowance: number;
   longTermMaintenanceReserve: number;
   netMonthlyLongTermProfit: number;
-  annualLongTermProfit: number;
+  longTermNetAnnual: number;
+  netAnnualLongTermProfit?: number; // alias
+  annualLongTermProfit?: number; // alias
   
-  // Delta & Breakeven
-  monthlyProfitDelta: number; // STR Net - Long Term Net
-  annualProfitDelta: number;
-  breakevenOccupancyRate: number; // % needed to match long-term
-  breakevenNightsNeeded: number; // Nights per month needed
-  isBreakevenFeasible: boolean; // Whether breakeven <= 100% and within legal caps
+  // Hosted Upside Scenario (if 90-night limit is why Airbnb loses)
+  hostedUpsideNetAnnual?: number;
+  hostedUpsideNights?: number;
+  hostedUpsideDelta?: number; // Delta against long-term if hosted
+  hostedUpsideDifference?: number; // alias
+  hostedUpsideAnnualNights?: number; // alias
+  
+  // Breakeven metrics
+  breakevenOccupancyRate: number;
+  breakevenNightsNeeded: number;
+  isBreakevenFeasible: boolean;
   breakevenExceedsLegalCap: boolean;
 }
 
@@ -90,37 +126,21 @@ export interface ComplianceEvaluation {
   statusLabel: string;
   primaryBlockers: string[];
   mandatoryConditions: string[];
-  complianceScore: number; // 0 - 100
-  dlcpLicenseType: 'Short-Term Rental Endorsement' | 'Vacation Rental Endorsement' | 'INELIGIBLE (Unlicensed / Illegal)';
+  complianceScore: number;
+  licenseCategory: 'Short-Term Rental' | 'Vacation Rental' | 'Not Allowed';
+  dlcpLicenseType?: string; // alias
   citations: string[];
 }
 
-export interface InsideAirbnbMetrics {
-  sourceUrl: string;
-  wardListingsCount: number;
-  entireHomePercent: number; // e.g. 77%
-  privateRoomPercent: number; // e.g. 18%
-  licensedPercent: number; // e.g. 68.4%
-  singleListingHostsPercent: number; // e.g. 63.4%
-  medianPrice: number;
-  averagePrice: number;
-  averageNightsBookedPerYear: number;
-  estimatedAnnualRevenue: number;
-}
-
-export interface NeighborhoodData {
-  id: string;
-  name: string;
-  ward: string;
-  coordinates: { lat: number; lng: number };
-  typicalADR: number;
-  typicalOccupancy: number;
+export interface MarketBenchmark {
+  nightlyRate: number;
+  typicalNightsBooked: number;
+  p25Rate: number;
+  p75Rate: number;
+  sampleCount: number;
+  isCitywideFallback: boolean;
   benchmarkLongTermRent: number;
-  vibe: string;
-  demandDrivers: string[];
-  seasonalSurges: { season: string; factor: string; note: string }[];
-  eventPricingTips: string[];
-  insideAirbnbMetrics?: InsideAirbnbMetrics;
+  neighborhoodName: string;
 }
 
 export interface ComparableListing {
@@ -128,7 +148,7 @@ export interface ComparableListing {
   title: string;
   neighborhoodId: string;
   neighborhoodName: string;
-  propertyType: PropertyType;
+  propertyType: PropertyType | string;
   propertyTypeLabel: string;
   bedrooms: number;
   bathrooms: number;
@@ -147,6 +167,20 @@ export interface ComparableListing {
   minimumNights?: number;
   reviewsPerMonth?: number;
   isInsideAirbnbVerified?: boolean;
+  listingUrl?: string;
 }
 
-
+export interface NeighborhoodData {
+  id: string;
+  name: string;
+  ward: string;
+  coordinates: { lat: number; lng: number };
+  typicalADR: number;
+  typicalOccupancy: number;
+  benchmarkLongTermRent: number;
+  vibe: string;
+  demandDrivers: string[];
+  seasonalSurges: { season: string; factor: string; note: string }[];
+  eventPricingTips: string[];
+  insideAirbnbMetrics?: any;
+}
